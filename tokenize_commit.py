@@ -22,65 +22,38 @@ import re
 import unicodedata
 import itertools
 
-def pairs(sequence):
-    first, second = itertools.tee(sequence, 2)
-    return itertools.zip_longest(first, itertools.islice(sequence, 1, None))
+def is_issue(text):
+    return re.match(r'#\d+$', text)
 
-def looks_like_issue(first, second):
-    if first == '#' and re.match(r'^\d+$', second):
-        return True
-    return False
 
-def looks_like_method_name(first, second):
-    if second == '()':
-        return True
+def is_method_name(text):
+    return re.match(r'''
+        (?:\w+(?:[.]|::))*  # Zero or more C++/Ruby namespaces
+        \w+
+        (?:
+            [(][)]          # A standard function
+         |
+            [#]\w+(?:[(][)])? # A Ruby Method
+        )
+    ''', text, re.VERBOSE)
 
-def is_integer(number):
-    try:
-        int(number)
-    except ValueError:
-        return False
-    else:
-        return True
 
 def is_file_pattern(text):
-    return re.match(r'[*\w]+\.[*\w]+', text)
+    return re.match(r'[.]*[/*\w]+\.[*\w]+$', text)
 
-def replace_special_tokens(sequence):
-    sequence = list(sequence)
-    index = 0
-    last = len(sequence)
 
-    # "Safe" peek at next word
-    def next_token(n=1):
-        start, end = index + n, index + n + 1
-        peek = sequence[start:end]
-        return peek[0] if len(peek) else ''
+def replace_special_token(token):
+    if is_issue(token):
+        return 'ISSUE-NUMBER'
+    elif is_method_name(token):
+        return 'METHOD-NAME'
+    elif is_file_pattern(token):
+        return 'FILE-PATTERN'
+    else:
+        assert len(token) > 0
+        assert token[0].lower() == token[0]
+        return token
 
-    def segment():
-        nonlocal index
-        while index < last:
-            current = sequence[index]
-            if current.startswith('*') and next_token().startswith('.'):
-                yield 'FILE-PATTERN'
-                index += 2
-            if is_file_pattern(current):
-                yield 'FILE-PATTERN'
-                index += 1
-            elif is_word(current) and next_token() == '(' and next_token(2) == ')':
-                yield 'METHOD-NAME'
-                index += 3
-            elif is_word(current):
-                yield current
-                index += 1
-            elif current == '#' and is_integer(next_token()):
-                # Yield the issue number.
-                yield 'ISSUE-NUMBER'
-                index += 2
-            else:
-                index += 1
-
-    return list(segment())
 
 def tokenize(string):
     """
@@ -91,8 +64,8 @@ def tokenize(string):
     ['na\u00efve']
 
     It can segment English text:
-    >>> tokenize("I ain't havin' it: ya hear?")
-    ['i', "ain't", 'havin', 'it', 'ya', 'hear']
+    >>> tokenize("I ain't havin' it, ya hear?")
+    ['i', "ain't", "havin'", 'it,', 'ya', 'hear?']
 
     It can replace issue numbers and filenames.
     >>> tokenize("Fixed #22 in filename.py ")
@@ -123,11 +96,7 @@ def tokenize(string):
     ustring = unicodedata.normalize('NFC', string).lower()
 
     # Break on word boundaries
-    segments = (text for text in uniseg.wordbreak.words(ustring))
+    segments = ustring.split()
 
     # Replace method names.
-    return replace_special_tokens(segments)
-
-def is_word(text):
-    # Text starts with a WORD character.
-    return re.match(r'\w', text, re.UNICODE)
+    return [replace_special_token(token) for token in segments]
