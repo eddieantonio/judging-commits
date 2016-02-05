@@ -1,0 +1,2 @@
+bpython==0.15
+pytest-xdist==1.14

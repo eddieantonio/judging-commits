@@ -123,3 +123,15 @@ def tokenize(string):
 
     # Replace method names.
     return [replace_special_token(token) for token in segments]
+
+
+if __name__ == '__main__':
+    import doctest
+    from blessings import Terminal
+    failures, tests = doctest.testmod()
+
+    term = Terminal()
+    if failures > 0:
+        print(term.red('{}/{} tests failed'.format(failures, tests)))
+    else:
+        print(term.green('{} tests passed!'.format(tests)))
