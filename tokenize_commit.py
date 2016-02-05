@@ -19,6 +19,7 @@ Tokenize files
 """
 
 import re
+import regex
 import unicodedata
 import itertools
 
@@ -26,6 +27,8 @@ def is_issue(text):
     return re.match(r'#\d+$', text)
 
 
+# I realize now that I'm only supposed to cover Java syntaxes...
+# ...but I'm still tempted to match erlang:syntax/0
 def is_method_name(text):
     return re.match(r'''
         (?:\w+(?:[.]|::))*  # Zero or more C++/Ruby namespaces
@@ -52,7 +55,8 @@ def replace_special_token(token):
     else:
         assert len(token) > 0
         assert token[0].lower() == token[0]
-        return token
+        # Remove trailing punctuation
+        return regex.sub(r'(?V1)[\p{Pe}\p{Po}]+$', '', token)
 
 
 def tokenize(string):
@@ -65,7 +69,7 @@ def tokenize(string):
 
     It can segment English text:
     >>> tokenize("I ain't havin' it, ya hear?")
-    ['i', "ain't", "havin'", 'it,', 'ya', 'hear?']
+    ['i', "ain't", 'havin', 'it', 'ya', 'hear']
 
     It can replace issue numbers and filenames.
     >>> tokenize("Fixed #22 in filename.py ")
@@ -86,8 +90,9 @@ def tokenize(string):
     It understands globs.
     >>> tokenize("ignore *.aux")
     ['ignore', 'FILE-PATTERN']
-
     >>> tokenize("ignore paper.*")
+    ['ignore', 'FILE-PATTERN']
+    >>> tokenize("ignore **/*.png")
     ['ignore', 'FILE-PATTERN']
     """
 
