@@ -23,6 +23,7 @@ import regex
 import unicodedata
 import itertools
 
+
 def is_issue(text):
     return re.match(r'#\d+$', text)
 
@@ -45,18 +46,35 @@ def is_file_pattern(text):
     return re.match(r'[.]*[/*\w]+\.[*\w]+$', text)
 
 
-def replace_special_token(token):
-    if is_issue(token):
+def clean_token(token):
+    """
+    It cleans tokens:
+    >>> clean_token('(foo,')
+    'foo'
+    >>> clean_token('readme.md.')
+    'readme.md'
+    >>> clean_token('*.lol)')
+    '*.lol'
+    """
+
+    token = regex.sub(r'(?V1)[\p{Pe}\p{Po}]+$', '', token)
+    return regex.sub(r'^(?V1)[\p{Pi}\p{Ps}]+', '', token)
+
+
+def replace_special_token(dirty_token):
+
+    if is_issue(dirty_token):
         return 'ISSUE-NUMBER'
-    elif is_method_name(token):
+    elif is_method_name(dirty_token):
         return 'METHOD-NAME'
-    elif is_file_pattern(token):
+    elif is_file_pattern(dirty_token):
         return 'FILE-PATTERN'
     else:
+        token = clean_token(dirty_token)
         assert len(token) > 0
         assert token[0].lower() == token[0]
         # Remove trailing punctuation
-        return regex.sub(r'(?V1)[\p{Pe}\p{Po}]+$', '', token)
+        return token
 
 
 def tokenize(string):
