@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import sys
-import csv
 import json
 
 
@@ -23,8 +22,10 @@ import json
 projects = set()
 with open(sys.argv[1], encoding="UTF-8") as csvfile:
     for row in csvfile:
-        project, *_ = row.split(',', maxsplit=1)
-        projects.add(project)
+        repo, *_ = row.split(',', maxsplit=1)
+        assert '/' in repo, (r"Ensure to remove all carriage returns from the"
+                             " data! (`tr -d $'\r' < data.csv > clean.csv`)")
+        projects.add(repo)
 
 with open('projects.json', 'w', encoding='UTF-8') as jsonfile:
     json.dump(list(projects), jsonfile)
