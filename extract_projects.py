@@ -1,13 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2016 Eddie Antonio Santos <easantos@ualberta.ca>
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,13 +16,15 @@
 
 import sys
 import csv
+import json
+
 
 # Will generate a JSON of the project names.
-with open(sys.argv[1]) as csvfile:
-    reader = csv.reader(csvfile)
-    symbol = '{'
-    for row in reader:
-        print(symbol)
-        print(' ', repr(row[0]), end='')
-        symbol =','
-    print('\n}')
+projects = set()
+with open(sys.argv[1], encoding="UTF-8") as csvfile:
+    for row in csvfile:
+        project, *_ = row.split(',', maxsplit=1)
+        projects.add(project)
+
+with open('projects.json', 'w', encoding='UTF-8') as jsonfile:
+    json.dump(list(projects), jsonfile)
