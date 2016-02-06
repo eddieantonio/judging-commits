@@ -68,7 +68,14 @@ Commit = Struct.new(:repo, :sha) do
 end
 
 CSV.open('commit-status.csv', 'wb') do |output|
-  CSV.open('commits.csv', 'rb', headers: false, encoding: 'UTF-8') do |infile|
+  options = {
+    headers: false,     # No headers from the online dump
+    quote_char: "\r",   # Ignore any quotes (preprocessing steps ensure that
+                        # CR is not present in the string, thus setting it to quote_char will never
+                        # trigger quote parsing).
+    encoding: 'UTF-8'
+  }
+  CSV.open('commits.csv', 'rb', options) do |infile|
     infile.to_enum.with_progress.each do |row|
       commit = Commit.new(row[0], row[1])
       status = commit.fetch_status
