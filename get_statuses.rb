@@ -68,7 +68,7 @@ Commit = Struct.new(:repo, :sha) do
 end
 
 CSV.open('commit-status.csv', 'wb') do |output|
-  CSV.open('commits.csv', 'rb', headers: true, encoding: 'UTF-8') do |infile|
+  CSV.open('commits.csv', 'rb', headers: false, encoding: 'UTF-8') do |infile|
     infile.to_enum.with_progress.each do |row|
       commit = Commit.new(row[0], row[1])
       status = commit.fetch_status
