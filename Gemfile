@@ -2,4 +2,4 @@
 source "https://rubygems.org"
 
 gem 'tqdm'
-gem "octokit", "~> 4.0"
+gem "travis", "~> 1.8.2"
