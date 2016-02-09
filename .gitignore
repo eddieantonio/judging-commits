@@ -3,3 +3,4 @@ __pycache__
 gh-access-token
 *.csv
 travis-token
+commits.pickle

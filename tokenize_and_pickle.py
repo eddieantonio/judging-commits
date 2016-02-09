@@ -38,13 +38,13 @@ with open(filename) as csv_file:
     reader = csv.reader(csv_file)
 
     for row in reader:
-        repo, sha, time_str, message_raw = row
-        time = datetime.fromtimestamp(time_str // 10**6)
+        repo, sha, time_str, message_raw, status = row
+        time = datetime.fromtimestamp(int(time_str) // 10**6)
         message = unescape_message(message_raw)
         tokens = tokenize(message)
 
         commit = Commit(repo=repo, sha=sha, time=time, message=message,
-                        tokens=tokens, status=None)
+                        tokens=tokens, status=status)
         if not commit.is_merge:
             commits.append(commit)
 
