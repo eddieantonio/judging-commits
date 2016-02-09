@@ -17,7 +17,13 @@
 from collections import namedtuple
 
 
-class Commit(namedtuple(..., 'repo sha time is_merge message tokens')):
+class Commit(namedtuple(..., 'repo sha time message tokens status')):
     """
     All of the relevant state of a particular commit.
     """
+    __slots__ = ()
+
+    @property
+    def is_merge(self):
+        return (self.message.startswith('Merge branch') or
+                self.message.startswith('Merge pull request'))
