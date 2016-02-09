@@ -1,6 +1,6 @@
 BASE = .
 
-commits.pickle: ./commits-combined.csv
+commits.pickle: commits-combined.csv
 	$(BASE)/tokenize_and_pickle.py $<
 
 commits-combined.csv: commit-status.csv commits.csv

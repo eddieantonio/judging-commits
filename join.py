@@ -27,6 +27,9 @@ with open(status_filename, encoding='UTF-8') as status_file:
     for repo, sha, status in csv.reader(status_file):
         statuses[(repo, sha)] = status
 
+# Extend the limit of a single line.
+csv.field_size_limit(2**31)
+
 with open(commits_filename, encoding='UTF-8') as commit_file,\
         open('commits-combined.csv', 'w', encoding='UTF-8') as out_file:
     output = csv.writer(out_file)

@@ -23,6 +23,9 @@ from commit import Commit
 from tokenize_commit import tokenize
 from datetime import datetime
 
+# Extend the limit of a single line.
+csv.field_size_limit(2**31)
+
 
 def unescape_message(text):
     return text\
