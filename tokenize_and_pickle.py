@@ -34,7 +34,7 @@ filename = sys.argv[1]
 commits = []
 
 
-with open(filename) as csv_file:
+with open(filename, encoding='UTF-8') as csv_file:
     reader = csv.reader(csv_file)
 
     for row in reader:

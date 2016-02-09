@@ -23,12 +23,12 @@ _, status_filename, commits_filename = sys.argv
 
 statuses = {}
 
-with open(status_filename) as status_file:
+with open(status_filename, encoding='UTF-8') as status_file:
     for repo, sha, status in csv.reader(status_file):
         statuses[(repo, sha)] = status
 
-with open(commits_filename) as commit_file,\
-        open('commits-combined.csv', 'w') as out_file:
+with open(commits_filename, encoding='UTF-8') as commit_file,\
+        open('commits-combined.csv', 'w', encoding='UTF-8') as out_file:
     output = csv.writer(out_file)
     csv.reader
     for row in csv.reader(commit_file):
