@@ -92,10 +92,14 @@ def clean_token(token):
     >>> clean_token('*.lol)')
     '*.lol'
 
-    It may return empty
-    >>> clean_token('[]')
-    ''
+    It returns tokens made entirely of punctuation as is.
+    >>> clean_token('[...]')
+    '[...]'
     """
+
+    # If it's entirely punctuation, return it as is
+    if regex.match(r'^(?V1)[\p{Pi}\p{Ps}]+[\p{Pe}\p{Po}]+$', token):
+        return token
 
     token = regex.sub(r'(?V1)[\p{Pe}\p{Po}]+$', '', token)
     return regex.sub(r'^(?V1)[\p{Pi}\p{Ps}]+', '', token)
@@ -110,7 +114,7 @@ def replace_special_token(dirty_token):
         return 'FILE-PATTERN'
     else:
         token = clean_token(dirty_token)
-        assert token[0].lower() == token[0]
+        assert token.lower() == token
         # Remove trailing punctuation
         return token
 
