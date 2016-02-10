@@ -130,21 +130,24 @@ def clean_token(token):
     if regex.match(r'^(?V1)[\p{Pi}\p{Ps}]+[\p{Pe}\p{Po}]+$', token):
         return token
 
-    token = regex.sub(r'(?V1)[\p{Pe}\p{Po}]+$', '', token)
-    return regex.sub(r'^(?V1)[\p{Pi}\p{Ps}]+', '', token)
+    # Remove surrounding parens, and initial quotations.
+    token = regex.sub(r'(?V1)[\p{Pe}\p{Po}--*#]+$', '', token)
+    return regex.sub(r'^(?V1)[\p{Pi}\p{Ps}\p{Po}--*#]+', '', token)
 
 
 def replace_special_token(dirty_token):
-    if is_version_number(dirty_token):
-        return 'VERSION-NUMBER'
-    if is_issue(dirty_token):
-        return 'ISSUE-NUMBER'
-    elif is_method_name(dirty_token):
+    # Do this one first...
+    if is_method_name(dirty_token):
         return 'METHOD-NAME'
-    elif is_file_pattern(dirty_token):
+
+    token = clean_token(dirty_token)
+    if is_issue(token):
+        return 'ISSUE-NUMBER'
+    elif is_version_number(token):
+        return 'VERSION-NUMBER'
+    elif is_file_pattern(token):
         return 'FILE-PATTERN'
     else:
-        token = clean_token(dirty_token)
         assert token.lower() == token
         # Remove trailing punctuation
         return token
