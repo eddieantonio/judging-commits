@@ -49,6 +49,35 @@ def is_issue(text):
     ''', text, re.VERBOSE))
 
 
+def is_version_number(text):
+    """
+    Does this token look like a semantic versioning string?
+
+    http://semver.org/
+
+    It's ambiguous if this is a version number or just a number.
+    >>> is_version_number('32')
+    False
+
+    This is more likely a version number.
+    >>> is_version_number('2.2')
+    True
+    >>> is_version_number('0.2.1')
+    True
+    >>> is_version_number('1.2-alpha')
+    True
+    >>> is_version_number('1.2.3-rc1')
+    True
+    """
+    return bool(re.match(r'''
+        v?
+        \d+              # Major number
+        (?: [.] \d+)?    # Minor number
+            [.] \d+      # Patch number
+        (?: -(?:alpha|beta|rc[.]?\d+))?  # Tag
+    ''', text, re.VERBOSE | re.IGNORECASE))
+
+
 # I realize now that I'm only supposed to cover Java syntaxes...
 # ...but I'm still tempted to match erlang:syntax/0
 def is_method_name(text):
@@ -106,6 +135,8 @@ def clean_token(token):
 
 
 def replace_special_token(dirty_token):
+    if is_version_number(dirty_token):
+        return 'VERSION-NUMBER'
     if is_issue(dirty_token):
         return 'ISSUE-NUMBER'
     elif is_method_name(dirty_token):
@@ -166,6 +197,10 @@ def tokenize(string):
     ['ignore', 'FILE-PATTERN']
     >>> tokenize("ignore **/*.png")
     ['ignore', 'FILE-PATTERN']
+
+    It understands semantic versions.
+    >>> tokenize("Release 2.1.0-rc.1")
+    ['release', 'VERSION-NUMBER']
     """
 
     # Step 1: Normalize into NFC
