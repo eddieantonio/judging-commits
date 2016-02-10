@@ -25,13 +25,49 @@ import itertools
 
 
 def is_issue(text):
-    return re.match(r'#\d+$', text)
+    """
+    Does this token look like an issue reference?
+    https://help.github.com/articles/autolinked-references-and-urls/#issues-and-pull-requests
+
+    >>> is_issue('26')
+    False
+    >>> is_issue('#26')
+    True
+    >>> is_issue('jlord#26')
+    True
+    >>> is_issue('jlord')
+    False
+    >>> is_issue('jlord/sheetsee.js')
+    False
+    >>> is_issue('jlord/sheetsee.js#26')
+    True
+    """
+    return bool(re.match(r'''
+        (?: (?:[\w.-]+/)?   # Owner
+               [\w.-]+)?    # Repository
+        [#]\d+$               # Issue number
+    ''', text, re.VERBOSE))
 
 
 # I realize now that I'm only supposed to cover Java syntaxes...
 # ...but I'm still tempted to match erlang:syntax/0
 def is_method_name(text):
-    return re.match(r'''
+    """
+    >>> is_method_name('hello')
+    False
+    >>> is_method_name('hello()')
+    True
+    >>> is_method_name('Foo::Bar')
+    False
+    >>> is_method_name('Foo::Bar#baz')
+    True
+    >>> is_method_name('Foo::Bar#baz()')
+    True
+    >>> is_method_name('user/repo#14')
+    False
+    """
+
+    return bool(re.match(r'''
         (?:\w+(?:[.]|::))*  # Zero or more C++/Ruby namespaces
         \w+
         (?:
@@ -39,11 +75,11 @@ def is_method_name(text):
          |
             [#]\w+(?:[(][)])? # A Ruby Method
         )
-    ''', text, re.VERBOSE)
+    ''', text, re.VERBOSE))
 
 
 def is_file_pattern(text):
-    return re.match(r'[.]*[/*\w]+\.[*\w]+$', text)
+    return bool(re.match(r'[.]*[/*\w]+\.[*\w]+$', text))
 
 
 def clean_token(token):
@@ -55,6 +91,10 @@ def clean_token(token):
     'readme.md'
     >>> clean_token('*.lol)')
     '*.lol'
+
+    It may return empty
+    >>> clean_token('[]')
+    ''
     """
 
     token = regex.sub(r'(?V1)[\p{Pe}\p{Po}]+$', '', token)
@@ -62,7 +102,6 @@ def clean_token(token):
 
 
 def replace_special_token(dirty_token):
-
     if is_issue(dirty_token):
         return 'ISSUE-NUMBER'
     elif is_method_name(dirty_token):
@@ -71,10 +110,21 @@ def replace_special_token(dirty_token):
         return 'FILE-PATTERN'
     else:
         token = clean_token(dirty_token)
-        assert len(token) > 0
         assert token[0].lower() == token[0]
         # Remove trailing punctuation
         return token
+
+
+def clean_tokens(tokens):
+    """
+    Generates only cleaned tokens. Tokens made of only punctuation are
+    completely removed.
+    """
+    for token in tokens:
+        cleaned = replace_special_token(token)
+        if len(token) == 0:
+            continue
+        yield cleaned
 
 
 def tokenize(string):
@@ -121,8 +171,8 @@ def tokenize(string):
     # Break on word boundaries
     segments = ustring.split()
 
-    # Replace method names.
-    return [replace_special_token(token) for token in segments]
+    # Replace method names, issues, and filenames.
+    return list(clean_tokens(segments))
 
 
 if __name__ == '__main__':
