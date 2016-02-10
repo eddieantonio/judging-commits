@@ -32,8 +32,7 @@ csv.field_size_limit(2**31)
 
 with open(commits_filename, encoding='UTF-8') as commit_file,\
         open('commits-combined.csv', 'w', encoding='UTF-8') as out_file:
-    output = csv.writer(out_file, csv.QUOTE_ALL)
-    csv.reader
+    output = csv.writer(out_file, quoting=csv.QUOTE_ALL)
     for row in csv.reader(commit_file):
         repo, sha, *_ = row
 

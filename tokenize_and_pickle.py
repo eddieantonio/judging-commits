@@ -38,10 +38,16 @@ commits = []
 
 
 with open(filename, encoding='UTF-8') as csv_file:
-    reader = csv.reader(csv_file)
+    reader = csv.reader(csv_file, quoting=csv.QUOTE_ALL)
 
     for row in reader:
-        repo, sha, time_str, message_raw, status = row
+        try:
+            repo, sha, time_str, message_raw, status = row
+        except ValueError as e:
+            from pprint import pprint as print
+            print(row)
+            raise e
+
         time = datetime.fromtimestamp(int(time_str) // 10**6)
         message = unescape_message(message_raw)
         tokens = tokenize(message)
