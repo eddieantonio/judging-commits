@@ -54,7 +54,7 @@ with open(filename, encoding='UTF-8') as csv_file:
 
         commit = Commit(repo=repo, sha=sha, time=time, message=message,
                         tokens=tokens, status=status)
-        if not commit.is_merge:
+        if commit.is_valid:
             commits.append(commit)
 
 with open('commits.pickle', 'wb') as pickle_file:

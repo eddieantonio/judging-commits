@@ -26,4 +26,13 @@ class Commit(namedtuple(..., 'repo sha time message tokens status')):
     @property
     def is_merge(self):
         return (self.message.startswith('Merge branch') or
-                self.message.startswith('Merge pull request'))
+                self.message.startswith('Merge pull request') or
+                self.message.startswith('Merge remote-tracking'))
+
+    @property
+    def build_was_cancelled(self):
+        return self.status == 'canceled'
+
+    @property
+    def is_valid(self):
+        return not self.build_was_cancelled and not self.is_merge
