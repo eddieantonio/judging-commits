@@ -10,4 +10,4 @@ commit-status.csv: commits.csv
 	$(BASE)/get_builds.rb
 
 commits.csv: boa-job30188-output.txt
-	<$< cut -b13-
+	<$< cut -b13- > $@
