@@ -36,3 +36,7 @@ class Commit(namedtuple(..., 'repo sha time message tokens status')):
     @property
     def is_valid(self):
         return not self.build_was_cancelled and not self.is_merge
+
+    @property
+    def message_as_ngrams(self):
+        return ' '.join(self.tokens)
