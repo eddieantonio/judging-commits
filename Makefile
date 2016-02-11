@@ -10,4 +10,4 @@ commit-status.csv: commits.csv
 	$(BASE)/get_builds.rb
 
 commits.csv: boa-job30188-output.txt
-	<$< awk -F'= ' '{ print $$2 }' | sed -E 's/[^"]$$/\1"/' > $@
+	<$< cut -b13-
