@@ -23,12 +23,40 @@ import regex
 import unicodedata
 import itertools
 
+
 def is_project_issue(text):
     """
+    Issues/pull requests from Apache projects in  Jira.
 
+    See: https://issues.apache.org/jira/secure/BrowseProjects.jspa#all
+
+    >>> is_project_issue('thrift-3615')
+    True
+    >>> is_project_issue('sling-5511')
+    True
+    >>> is_project_issue('sling')
+    False
+
+    >>> is_project_issue('project-8.1')
+    False
+
+    Special cases:
+    >>> is_project_issue('utf-8')
+    False
+    >>> is_project_issue('latin-1')
+    False
+    >>> is_project_issue('iso-8858')
+    False
     """
 
-    return bool(re.match(r'\w+-\d+', re.UNICODE))
+    return bool(re.match(r'''
+        (?!utf-)    # Some special cases...
+        (?!latin-)
+        (?!iso-)
+
+        \w+-\d+$
+    ''', text, re.VERBOSE | re.UNICODE))
+
 
 def is_issue(text):
     """
@@ -171,6 +199,8 @@ def replace_special_token(dirty_token):
     token = clean_token(dirty_token)
     if is_issue(token):
         return 'ISSUE-NUMBER'
+    elif is_project_issue(token):
+        return 'PROJECT-ISSUE'
     elif is_version_number(token):
         return 'VERSION-NUMBER'
     elif is_file_pattern(token):
@@ -232,6 +262,10 @@ def tokenize(string):
     It understands semantic versions.
     >>> tokenize("Release 2.1.0-rc.1")
     ['release', 'VERSION-NUMBER']
+
+    It understands Jira project issues.
+    >>> tokenize('THRIFT-2183 gem install fails on zsh')
+    ['PROJECT-ISSUE', 'gem', 'install', 'fails', 'on', 'zsh']
     """
 
     # Step 1: Normalize into NFC
