@@ -23,6 +23,12 @@ import regex
 import unicodedata
 import itertools
 
+def is_project_issue(text):
+    """
+
+    """
+
+    return bool(re.match(r'\w+-\d+', re.UNICODE))
 
 def is_issue(text):
     """
@@ -46,7 +52,7 @@ def is_issue(text):
         (?: (?:[\w.-]+/)?   # Owner
                [\w.-]+)?    # Repository
         [#]\d+$               # Issue number
-    ''', text, re.VERBOSE))
+    ''', text, re.VERBOSE | re.UNICODE))
 
 
 def is_version_number(text):
@@ -108,7 +114,29 @@ def is_method_name(text):
 
 
 def is_file_pattern(text):
-    return bool(re.match(r'[.]*[/*\w]+\.[*\w]+$', text))
+    """
+    >>> is_file_pattern('file.java')
+    True
+    >>> is_file_pattern('.gitignore')
+    True
+    >>> is_file_pattern('file')
+    False
+    >>> is_file_pattern('java')
+    False
+    >>> is_file_pattern('*.java')
+    True
+    >>> is_file_pattern('docs/Makefile')
+    True
+    >>> is_file_pattern('**/*.jpg')
+    True
+    """
+    return bool(re.match(r'''
+        (?: [.]{0,2}[\-_*\w+]+ /)*  # Preceeding directories, if any
+            [.]?[\-_*\w+]+          # The basename
+
+        (?: [.][\-_*\w]+            # An extension
+          | (?: file | ignore ))    # .gitignore, Makefile
+    ''', text, re.VERBOSE | re.UNICODE))
 
 
 def clean_token(token):
