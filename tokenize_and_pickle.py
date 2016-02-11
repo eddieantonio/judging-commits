@@ -34,9 +34,8 @@ def unescape_message(text):
         .replace('\\\\', '\\')
 
 filename = sys.argv[1]
-commits = []
 
-
+repos = defaultdict(list)
 with open(filename, encoding='UTF-8') as csv_file:
     reader = csv.reader(csv_file, quoting=csv.QUOTE_ALL)
 
@@ -44,6 +43,7 @@ with open(filename, encoding='UTF-8') as csv_file:
         try:
             repo, sha, time_str, message_raw, status = row
         except ValueError as e:
+            # Unexpected pprint
             from pprint import pprint as print
             print(row)
             raise e
@@ -54,8 +54,9 @@ with open(filename, encoding='UTF-8') as csv_file:
 
         commit = Commit(repo=repo, sha=sha, time=time, message=message,
                         tokens=tokens, status=status)
+
         if commit.is_valid:
-            commits.append(commit)
+            repos[commit.repo].append(commit)
 
 with open('commits.pickle', 'wb') as pickle_file:
-    pickle.dump(commits, pickle_file)
+    pickle.dump(repos, pickle_file)
