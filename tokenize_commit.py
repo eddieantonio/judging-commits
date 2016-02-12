@@ -24,6 +24,21 @@ import unicodedata
 import itertools
 
 
+def is_sha(text):
+    """
+    >>> is_sha('afa67f75a65f6a7f87af54a0')
+    False
+    >>> is_sha('d670460b4b4aece5915caf5c68d12f560a9fe3e4')
+    True
+    >>> is_sha('ad670460b4b4aece5915caf5c68d12f560a9fe3e4')
+    False
+    >>> is_sha('670460b4b4aece5915caf5c68d12f560a9fe3e4')
+    False
+    """
+
+    return bool(re.match(r'''^[a-f0-9]{40}$''', text, re.VERBOSE))
+
+
 def is_project_issue(text):
     """
     Issues/pull requests from Apache projects in  Jira.
@@ -192,7 +207,7 @@ def clean_token(token):
 
 
 def replace_special_token(dirty_token):
-    # Do this one first...
+    # Do these two first...
     if is_method_name(dirty_token):
         return 'METHOD-NAME'
 
@@ -201,6 +216,8 @@ def replace_special_token(dirty_token):
         return 'ISSUE-NUMBER'
     elif is_project_issue(token):
         return 'PROJECT-ISSUE'
+    elif is_sha(token):
+        return 'GIT-SHA'
     elif is_version_number(token):
         return 'VERSION-NUMBER'
     elif is_file_pattern(token):
@@ -242,7 +259,7 @@ def clean_front(text):
     >>> clean_front('+)add action type all')
     'add action type all'
     """
-    
+
     return re.sub(r'''
         ^\s*
             (?: [#](?!\d)
@@ -302,12 +319,16 @@ def tokenize(string):
     It can handle a bracketed initial token:
     >>> tokenize('[#41229165] Improve login box layout')
     ['ISSUE-NUMBER', 'improve', 'login', 'box', 'layout']
+
+    It can parse git SHAs.
+    >>> tokenize('Squashed commit 95c3adb49ea2a9831dbbe85d33a2b13c6781e860')
+    ['squashed', 'commit', 'GIT-SHA']
     """
 
     # Step 1: Normalize into NFC
     # Step 2: Lowercase
     ustring = unicodedata.normalize('NFC', string).lower()
-    
+
     # Remove leading '-', '*', '#'
     cleaned = clean_front(ustring)
 
