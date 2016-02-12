@@ -187,8 +187,8 @@ def clean_token(token):
         return token
 
     # Remove surrounding parens, and initial quotations.
-    token = regex.sub(r'(?V1)[\p{Pe}\p{Po}--*#]+$', '', token)
-    return regex.sub(r'^(?V1)[\p{Pi}\p{Ps}\p{Po}--*#]+', '', token)
+    token = regex.sub(r'^(?V1)[\p{Pi}\p{Ps}\p{Po}--*#]+', '', token)
+    return regex.sub(r'(?V1)[\p{Pe}\p{Po}--*#]+$', '', token)
 
 
 def replace_special_token(dirty_token):
@@ -221,6 +221,25 @@ def clean_tokens(tokens):
         if len(token) == 0:
             continue
         yield cleaned
+
+
+def clean_front(text):
+    """
+    >>> clean_front(' - herp')
+    'herp'
+    >>> clean_front('#34')
+    '#34'
+    >>> clean_front('* Makefile comment')
+    'Makefile comment'
+    """
+    
+    return re.sub(r'''
+        ^\s*
+            (?: [#](?!\d)
+              | [*]
+              | -)
+        \s*
+    ''', '', text, flags=re.VERBOSE)
 
 
 def tokenize(string):
@@ -266,14 +285,25 @@ def tokenize(string):
     It understands Jira project issues.
     >>> tokenize('THRIFT-2183 gem install fails on zsh')
     ['PROJECT-ISSUE', 'gem', 'install', 'fails', 'on', 'zsh']
+
+    It can separate on semi-colons:
+    >>> tokenize('#345;fixed critical bug')
+    ['ISSUE-NUMBER', 'fixed', 'critical', 'bug']
+
+    It can handle a bracketed initial token.
+    >>> tokenize('[#41229165] Improve login box layout')
+    ['ISSUE-NUMBER', 'improve', 'login', 'box', 'layout']
     """
 
     # Step 1: Normalize into NFC
     # Step 2: Lowercase
     ustring = unicodedata.normalize('NFC', string).lower()
+    
+    # Remove leading '-', '*', '#'
+    cleaned = clean_front(ustring)
 
-    # Break on word boundaries
-    segments = ustring.split()
+    # Break on whitespace and semi-colons.
+    segments = re.split(r'[\s;]+', cleaned, flags=re.UNICODE)
 
     # Replace method names, issues, and filenames.
     return list(clean_tokens(segments))
