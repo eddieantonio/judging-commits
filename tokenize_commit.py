@@ -36,7 +36,33 @@ def is_sha(text):
     False
     """
 
-    return bool(re.match(r'''^[a-f0-9]{40}$''', text, re.VERBOSE))
+    return bool(re.match(r'''^[a-f0-9]{40}$''', text))
+
+
+def is_bracketed_email(text):
+    """
+    >>> is_bracketed_email('<html>')
+    False
+    >>> is_bracketed_email('<alexander.laamanen@valotrading.fi>')
+    True
+    >>> is_bracketed_email('<@new-js.bundle@/>')
+    False
+    >>> is_bracketed_email('<bob@ci.prod.valotrading.com>')
+    True
+    >>> is_bracketed_email('<ankit1991laddha@gmail.com>')
+    True
+    >>> is_bracketed_email('<http://www.nodeclipse.org/#support>')
+    False
+    """
+
+    return bool(re.match(r'''
+        <
+            [.\w]+          # User
+            @
+            (?:[\w]+[.])+   #
+            \w+             # TLD
+        >
+    ''', text, re.VERBOSE))
 
 
 def is_project_issue(text):
@@ -172,6 +198,8 @@ def is_file_pattern(text):
     True
     >>> is_file_pattern('**/*.jpg')
     True
+    >>> is_file_pattern('.rubocop.yml')
+    True
     """
     return bool(re.match(r'''
         (?: [.]{0,2}[\-_*\w+]+ /)*  # Preceeding directories, if any
@@ -202,8 +230,8 @@ def clean_token(token):
         return token
 
     # Remove surrounding parens, and initial quotations.
-    token = regex.sub(r'^(?V1)[\p{Pi}\p{Ps}\p{Po}--*#]+', '', token)
-    return regex.sub(r'(?V1)[\p{Pe}\p{Po}--*#]+$', '', token)
+    token = regex.sub(r'^(?V1)[`\p{Pi}\p{Ps}\p{Po}--*#]+', '', token)
+    return regex.sub(r'(?V1)[`\p{Pe}\p{Po}--*#]+$', '', token)
 
 
 def replace_special_token(dirty_token):
@@ -218,6 +246,8 @@ def replace_special_token(dirty_token):
         return 'PROJECT-ISSUE'
     elif is_sha(token):
         return 'GIT-SHA'
+    elif is_bracketed_email(token):
+        return 'EMAIL'
     elif is_version_number(token):
         return 'VERSION-NUMBER'
     elif is_file_pattern(token):
@@ -316,13 +346,21 @@ def tokenize(string):
     >>> tokenize('#345;fixed critical bug')
     ['ISSUE-NUMBER', 'fixed', 'critical', 'bug']
 
+    It understands surrounding backticks:
+    >>> tokenize('Create `.rubocop.yml`')
+    ['create', 'FILE-PATTERN']
+
     It can handle a bracketed initial token:
     >>> tokenize('[#41229165] Improve login box layout')
     ['ISSUE-NUMBER', 'improve', 'login', 'box', 'layout']
 
-    It can parse git SHAs.
+    It can parse git SHAs:
     >>> tokenize('Squashed commit 95c3adb49ea2a9831dbbe85d33a2b13c6781e860')
     ['squashed', 'commit', 'GIT-SHA']
+
+    It understands email notation:
+    >>> tokenize('Bump version 3.2.0 signed off by <foo@example.org>')
+    ['bump', 'version', 'VERSION-NUMBER', 'signed', 'off', 'by', 'EMAIL']
     """
 
     # Step 1: Normalize into NFC
