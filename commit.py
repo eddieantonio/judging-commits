@@ -14,8 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import namedtuple
+from __future__ import division
 
+import regex
+from collections import namedtuple
 
 class Commit(namedtuple(..., 'repo sha time message tokens status')):
     """
@@ -35,8 +37,26 @@ class Commit(namedtuple(..., 'repo sha time message tokens status')):
 
     @property
     def is_valid(self):
-        return not self.build_was_cancelled and not self.is_merge
+        return (not self.build_was_cancelled and
+                not self.is_merge and
+                not self.is_empty and
+                self.is_plausibly_english)
 
     @property
     def message_as_ngrams(self):
         return ' '.join(self.tokens)
+
+    @property
+    def is_empty(self):
+        return len(self.message_as_ngrams.strip()) == 0
+
+    @property
+    def is_plausibly_english(self):
+        if len(self.message) == 0:
+            return False
+
+        pattern = r'[\p{Script=Common}\p{Script=Latin}]+'
+        # langdetect performs very poorly, so a hand made heurisitic follows:
+        latin_or_common_chars = sum(len(match) for match in
+                                    regex.findall(pattern, self.message))
+        return (latin_or_common_chars / len(self.message)) > 0.5
