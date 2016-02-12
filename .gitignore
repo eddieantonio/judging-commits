@@ -5,3 +5,4 @@ gh-access-token
 travis-token
 commits.pickle
 boa-job30188-output.txt
+*.html

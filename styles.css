@@ -1,0 +1,44 @@
+body {
+    font-family: sans-serif;
+    margin: auto;
+    max-width: 32em;
+}
+
+section.message {
+    font-style: italic;
+    font-family: Zafino;
+    margin-bottom: 0.6em;
+}
+
+.token {
+    font-family: monospace;
+    /* border: 1px solid grey; */
+    border-radius: 2px;
+    background-color: grey;
+    color: white;
+    padding: 2px;
+    margin: 1px;
+    display: inline-block;
+}
+
+.tokens {
+    padding: 0.25em;
+    padding-left: 1em;
+}
+
+.token.special-token {
+    background-color: #900;
+}
+
+.commit {
+    padding: 0.5em;
+    background-color: aliceblue;
+}
+
+.commit:nth-child(2n) {
+    background-color: #f0f0f0;
+}
+
+.commit:not(.english) {
+    opacity: 0.4;
+}
