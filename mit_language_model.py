@@ -96,4 +96,6 @@ def train_model(corpus, output_name, order=3):
             '-text', corpus,
             '-order', str(order),
             '-write-lm', output_name]
-    subprocess.check_call(args)
+    subprocess.check_call(args,
+                          stdout=subprocess.DEVNULL,
+                          stderr=subprocess.DEVNULL)

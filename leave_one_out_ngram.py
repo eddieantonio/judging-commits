@@ -20,8 +20,10 @@
 
 import pickle
 
+from tqdm import tqdm
+
 from commit import Commit
-from mit_language_model import MITLanguageModel
+from mit_language_model import MITLanguageModel, ModelError
 
 
 def load_commits_by_repo():
@@ -29,16 +31,35 @@ def load_commits_by_repo():
         return pickle.load(fp)
 
 
+def evaluate_repo(name, repositories):
+    # Get all commits NOT from this repository
+    other_commits = (c for repo_name, commits in repositories.items()
+                     for c in commits
+                     if repo_name != name)
+    model = None
+
+    def perplexities():
+        assert model is not None
+        for commit in repositories[name]:
+            perplexity = model.evaluate_perlexity(commit)
+            yield commit.repo, commit.sha, perplexity
+
+    with MITLanguageModel(other_commits) as model:
+        return tuple(perplexities())
+
+
 def main():
     repositories = load_commits_by_repo()
-    project, commits = repositories.popitem()
-    other_commits = (c for commits in repositories.values()
-                    for c in commits)
-    with MITLanguageModel(other_commits) as model:
-        for commit in commits:
-            perp = model.evaluate_perlexity(commit)
-            print("{:g}: ``{:s}''".format(perp,
-                                          commit.message_as_ngrams))
+    repo_names = tuple(repositories.keys())
+
+    with open('errors.csv', 'w') as errors, open('perps.csv', 'w') as perps:
+        for name in tqdm(repo_names):
+            try:
+                lines = evaluate_repo(name, repositories)
+                for repo, sha, line in lines:
+                    print(repo, sha, line, sep=',', file=perps)
+            except ModelError:
+                print(name, file=errors)
 
 if __name__ == '__main__':
     main()
