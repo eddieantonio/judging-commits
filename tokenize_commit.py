@@ -225,19 +225,28 @@ def clean_tokens(tokens):
 
 def clean_front(text):
     """
+    Removes various method prefixes.
+
     >>> clean_front(' - herp')
     'herp'
     >>> clean_front('#34')
     '#34'
     >>> clean_front('* Makefile comment')
     'Makefile comment'
+    >>> clean_front('*)use libcurl to handle fetion request')
+    'use libcurl to handle fetion request'
+    >>> clean_front('** added branch whitelist for travis')
+    'added branch whitelist for travis'
+    >>> clean_front('+ config changes')
+    'config changes'
+    >>> clean_front('+)add action type all')
+    'add action type all'
     """
     
     return re.sub(r'''
         ^\s*
             (?: [#](?!\d)
-              | [*]
-              | -)
+              | [*+\-]+[)]?)
         \s*
     ''', '', text, flags=re.VERBOSE)
 
@@ -254,23 +263,23 @@ def tokenize(string):
     >>> tokenize("I ain't havin' it, ya hear?")
     ['i', "ain't", 'havin', 'it', 'ya', 'hear']
 
-    It can replace issue numbers and filenames.
+    It can replace issue numbers and filenames:
     >>> tokenize("Fixed #22 in filename.py ")
     ['fixed', 'ISSUE-NUMBER', 'in', 'FILE-PATTERN']
 
-    It tokenizes simple function names
+    It tokenizes simple function names:
     >>> tokenize("Implement foobar()")
     ['implement', 'METHOD-NAME']
 
-    It understands C++/Ruby namespaces
+    It understands C++/Ruby namespaces:
     >>> tokenize("Fixed #31 in std::whoopsie_handler() ")
     ['fixed', 'ISSUE-NUMBER', 'in', 'METHOD-NAME']
 
-    It understands Ruby method notation
+    It understands Ruby method notation:
     >>> tokenize("Fixed #31 in Herp#derp")
     ['fixed', 'ISSUE-NUMBER', 'in', 'METHOD-NAME']
 
-    It understands globs.
+    It understands globs:
     >>> tokenize("ignore *.aux")
     ['ignore', 'FILE-PATTERN']
     >>> tokenize("ignore paper.*")
@@ -278,11 +287,11 @@ def tokenize(string):
     >>> tokenize("ignore **/*.png")
     ['ignore', 'FILE-PATTERN']
 
-    It understands semantic versions.
+    It understands semantic versions:
     >>> tokenize("Release 2.1.0-rc.1")
     ['release', 'VERSION-NUMBER']
 
-    It understands Jira project issues.
+    It understands Jira project issues:
     >>> tokenize('THRIFT-2183 gem install fails on zsh')
     ['PROJECT-ISSUE', 'gem', 'install', 'fails', 'on', 'zsh']
 
@@ -290,7 +299,7 @@ def tokenize(string):
     >>> tokenize('#345;fixed critical bug')
     ['ISSUE-NUMBER', 'fixed', 'critical', 'bug']
 
-    It can handle a bracketed initial token.
+    It can handle a bracketed initial token:
     >>> tokenize('[#41229165] Improve login box layout')
     ['ISSUE-NUMBER', 'improve', 'login', 'box', 'layout']
     """
