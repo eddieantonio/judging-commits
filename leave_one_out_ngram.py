@@ -39,7 +39,6 @@ def main():
             perp = model.evaluate_perlexity(commit)
             print("{:g}: ``{:s}''".format(perp,
                                           commit.message_as_ngrams))
-        input(model.name)
 
 if __name__ == '__main__':
     main()

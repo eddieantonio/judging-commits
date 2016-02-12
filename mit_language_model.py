@@ -19,6 +19,16 @@ import os
 import subprocess
 import tempfile
 
+class ModelError(Exception):
+    pass
+
+
+class ModelTrainingError(ModelError):
+    pass
+
+class ModelEvaluationError(ModelError):
+    pass
+
 
 class MITLanguageModel(object):
     def __init__(self, commits=None, order=3):
@@ -34,9 +44,12 @@ class MITLanguageModel(object):
         with tempfile.NamedTemporaryFile('wb') as text_file:
             for commit in commits:
                 print_commit(commit, text_file)
-            input(text_file.name)
-            train_model(text_file.name, self.name,
-                        order=self.order)
+            try:
+                train_model(text_file.name, self.name,
+                            order=self.order)
+            except subprocess.CalledProcessError:
+                raise ModelTrainingError()
+
         return self
 
     def evaluate_perlexity(self, commit, order=None):
@@ -45,7 +58,10 @@ class MITLanguageModel(object):
 
         with tempfile.NamedTemporaryFile('wb') as text_file:
             print_commit(commit, text_file)
-            return evaluate_ngram(self.name, text_file.name, order=order)
+            try:
+                return evaluate_ngram(self.name, text_file.name, order=order)
+            except subprocess.CalledProcessError:
+                raise ModelEvaluationError()
 
     def __enter__(self):
         return self
