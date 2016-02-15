@@ -269,7 +269,11 @@ def is_url(text):
     True
     """
 
-    pieces = urlparse(text)
+    try:
+        pieces = urlparse(text)
+    except ValueError:
+        return False
+
     if pieces.scheme not in ('http', 'https', 'svn'):
         return False
     if not pieces.netloc:
