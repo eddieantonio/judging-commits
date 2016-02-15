@@ -204,12 +204,15 @@ def is_file_pattern(text):
     True
     >>> is_file_pattern('.rubocop.yml')
     True
+    >>> is_file_pattern('Class.{h,cpp}')
+    True
     """
     return bool(re.match(r'''
         (?: [.]{0,2}[\-_*\w+]+ /)*  # Preceeding directories, if any
             [.]?[\-_*\w+]+          # The basename
 
         (?: [.][\-_*\w]+            # An extension
+          | [.][{][^}*,]+,[^}*]+[}] # An alternation
           | (?: file | ignore ))    # .gitignore, Makefile
     ''', text, re.VERBOSE | re.UNICODE))
 
