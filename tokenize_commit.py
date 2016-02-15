@@ -143,13 +143,17 @@ def is_version_number(text):
     True
     >>> is_version_number('1.2.3-rc1')
     True
+    >>> is_version_number('1.3.1.Final')
+    True
+    >>> is_version_number('1.11.0.RELEASE')
+    True
     """
     return bool(re.match(r'''
         v?
         \d+              # Major number
         (?: [.] \d+)?    # Minor number
             [.] \d+      # Patch number
-        (?: -(?:alpha|beta|rc[.]?\d+))?  # Tag
+        (?: [\-.](?:\w+|rc[.]?\d+))*  # Tag
     ''', text, re.VERBOSE | re.IGNORECASE))
 
 
