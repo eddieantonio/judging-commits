@@ -23,6 +23,11 @@ import regex
 import unicodedata
 import itertools
 
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
+
 
 def is_sha(text):
     """
@@ -208,6 +213,37 @@ def is_release_identifier(text):
     ''', text, re.VERBOSE))
 
 
+def is_url(text):
+    """
+    URL restricted to http://, or https://, svn://,
+
+    >>> is_url('example.org')
+    False
+    >>> is_url('http://example.org')
+    True
+    >>> is_url('http://example.org/')
+    True
+    >>> is_url('mailto:ed@example.org')
+    False
+    >>> is_url('http://x-name.donuts/')
+    True
+    >>> is_url('http://x-name.donuts/herp?q=herp#derp')
+    True
+    >>> is_url('x-name.donuts/herp?q=herp#derp')
+    False
+    >>> is_url('svn://pc-lab14/SVN/xap/trunk/openspaces@160822')
+    True
+    """
+
+    pieces = urlparse(text)
+    if pieces.scheme not in ('http', 'https', 'svn'):
+        return False
+    if not pieces.netloc:
+        return False
+
+    return True
+
+
 def is_file_pattern(text):
     """
     >>> is_file_pattern('file.java')
@@ -281,6 +317,8 @@ def replace_special_token(dirty_token):
         return 'RELEASE-IDENTIFIER'
     elif is_version_number(token):
         return 'VERSION-NUMBER'
+    elif is_url(token):
+        return 'URL'
     # Do this one last...
     elif is_file_pattern(token):
         return 'FILE-PATTERN'
@@ -397,6 +435,14 @@ def tokenize(string):
     It understands release identifiers:
     >>> tokenize('[maven-release-plugin] prepare release killbill-0.1.66')
     ['maven-release-plugin', 'prepare', 'release', 'RELEASE-IDENTIFIER']
+
+    It understands URLs:
+    >>> tokenize('GS-803 git-svn-id: svn://pc-lab14/SVN/xap/trunk/openspaces@160822')
+    ['PROJECT-ISSUE', 'git-svn-id', 'URL']
+
+    It understand numbers:
+    >>> tokenize('GS-803 Build version advanced to 10491-7')
+    ['PROJECT-ISSUE', 'build', 'version', 'advanced', 'to', 'BUILD-VERSION']
     """
 
     # Step 1: Normalize into NFC
