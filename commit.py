@@ -16,7 +16,10 @@
 
 from __future__ import division
 
+import weakref
+
 from collections import namedtuple
+from math import log
 
 import regex
 
@@ -25,10 +28,10 @@ from tokenize_commit import tokenize
 
 # Would use weakref but things get a bit weird...
 # Let's tear through our memory instead.
-_MESSAGE_CACHE = {}
+_MESSAGE_CACHE = weakref.WeakKeyDictionary()
 
 
-class Commit(namedtuple(..., 'repo sha time message tokens status')):
+class Commit(namedtuple(..., 'repo sha time message status perplexity')):
     """
     All of the relevant state of a particular commit.
     """
@@ -52,6 +55,10 @@ class Commit(namedtuple(..., 'repo sha time message tokens status')):
         return self.status == 'canceled'
 
     @property
+    def cross_entropy(self):
+        return log(self.perplexity, base=2)
+
+    @property
     def is_valid(self):
         return (not self.build_was_cancelled and
                 not self.is_merge and
@@ -61,10 +68,10 @@ class Commit(namedtuple(..., 'repo sha time message tokens status')):
     @property
     def tokens_as_string(self):
         try:
-            return _MESSAGE_CACHE[self.repo, self.sha]
+            return _MESSAGE_CACHE[self.sha]
         except KeyError:
             message = ' '.join(self.tokens)
-            _MESSAGE_CACHE[self.repo, self.sha] = message
+            _MESSAGE_CACHE[self.sha] = message
             return message
 
     @property
