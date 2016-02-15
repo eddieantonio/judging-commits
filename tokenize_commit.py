@@ -193,6 +193,20 @@ def is_method_name(text):
     ''', text, re.VERBOSE))
 
 
+def is_build_version(text):
+    """
+    >>> is_build_version('1134-31')
+    True
+    >>> is_build_version('a-42')
+    False
+    """
+
+    return bool(re.match(r'''
+        \d+-\d+
+    ''', text, re.VERBOSE))
+
+
+
 def is_release_identifier(text):
     """
     >>> is_release_identifier('utf-8')
@@ -307,6 +321,8 @@ def replace_special_token(dirty_token):
     token = clean_token(dirty_token)
     if is_issue(token):
         return 'ISSUE-NUMBER'
+    elif is_build_version(token):
+        return 'BUILD-VERSION'
     elif is_project_issue(token):
         return 'PROJECT-ISSUE'
     elif is_sha(token):
