@@ -125,7 +125,7 @@ def is_issue(text):
     return bool(re.match(r'''
         (?: (?:[\w.-]+/)?   # Owner
                [\w.-]+)?    # Repository
-        [#]\d+$               # Issue number
+        [#]\d+$             # Issue number
     ''', text, re.VERBOSE | re.UNICODE))
 
 
@@ -221,11 +221,10 @@ def is_uuid(text):
         [a-f0-9]{8}  -   # time-low
         [a-f0-9]{4}  -   # time-mid
         [a-f0-9]{4}  -   # time-high-and-version
-        [a-f0-9]{4}  -   # clock-seq-and-reserved clock-seq-low 
+        [a-f0-9]{4}  -   # clock-seq-and-reserved clock-seq-low
         [a-f0-9]{12}     # node
         $
     ''', text, re.VERBOSE))
-
 
 
 def is_release_identifier(text):
