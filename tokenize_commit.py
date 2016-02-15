@@ -147,6 +147,8 @@ def is_version_number(text):
     True
     >>> is_version_number('1.11.0.RELEASE')
     True
+    >>> is_version_number('0.1-SNAPSHOT')
+    True
     """
     return bool(re.match(r'''
         v?
@@ -183,6 +185,26 @@ def is_method_name(text):
          |
             [#]\w+(?:[(][)])? # A Ruby Method
         )
+    ''', text, re.VERBOSE))
+
+
+def is_release_identifier(text):
+    """
+    >>> is_release_identifier('utf-8')
+    False
+    >>> is_release_identifier('killbill-0.1.66')
+    True
+    >>> is_release_identifier('jargo-parent-0.1.1')
+    True
+    """
+
+    return bool(re.match(r'''
+        [\w\-_]+
+        # Copy-pasted is_version_number() regex
+        \d+              # Major number
+        (?: [.] \d+)?    # Minor number
+            [.] \d+      # Patch number
+        (?: [\-.](?:\w+|rc[.]?\d+))*  # Tag
     ''', text, re.VERBOSE))
 
 
@@ -255,8 +277,11 @@ def replace_special_token(dirty_token):
         return 'GIT-SHA'
     elif is_bracketed_email(token):
         return 'EMAIL'
+    elif is_release_identifier(token):
+        return 'RELEASE-IDENTIFIER'
     elif is_version_number(token):
         return 'VERSION-NUMBER'
+    # Do this one last...
     elif is_file_pattern(token):
         return 'FILE-PATTERN'
     else:
@@ -368,6 +393,10 @@ def tokenize(string):
     It understands email notation:
     >>> tokenize('Bump version 3.2.0 signed off by <foo@example.org>')
     ['bump', 'version', 'VERSION-NUMBER', 'signed', 'off', 'by', 'EMAIL']
+
+    It understands release identifiers:
+    >>> tokenize('[maven-release-plugin] prepare release killbill-0.1.66')
+    ['maven-release-plugin', 'prepare', 'release', 'RELEASE-IDENTIFIER']
     """
 
     # Step 1: Normalize into NFC
