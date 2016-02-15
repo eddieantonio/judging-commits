@@ -4,6 +4,7 @@ gh-access-token
 *.csv
 travis-token
 commits.pickle
-boa-job30188-output.txt
+boa-job*-output.txt
 *.html
 *.sqlite
+*.sqlite-journal

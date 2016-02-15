@@ -20,6 +20,8 @@ import re
 import sqlite3
 from datetime import datetime
 
+from tqdm import tqdm
+
 from commit import Commit
 
 
@@ -34,7 +36,7 @@ commits_raw (
     time    DATE NOT NULL,
     message TEXT NOT NULL,
 
-    PRIMARY KEY (repo, sha) ON CONFLICT ABORT
+    PRIMARY KEY (repo, sha)
 ) WITHOUT ROWID;
 
 -- Travis-CI
@@ -69,20 +71,14 @@ perplexity (
 
 CREATE VIEW IF NOT EXISTS
 repositories (
-    name    TEXT,
-    len     INTEGER
+    name, commits
 )
-AS SELECT DISTINCT repo AS name, COUNT(sha)
+AS SELECT DISTINCT repo AS name, COUNT(sha) as commits
 FROM commits;
 
 CREATE VIEW IF NOT EXISTS
 commits (
-    repo        TEXT,
-    sha         TEXT,
-    time        DATE,
-    message     TEXT,
-    status      TEXT,
-    perplexity  REAL
+    repo, sha, time, message, status, perplexity
 )
 AS SELECT
     c.repo AS repo, c.sha AS sha,
@@ -95,9 +91,9 @@ FROM
 WHERE
     status IS NOT 'cancelled';
 
--- Look-up a commit by SHA; there's an insignificant non-zero possibilty of a
--- collision, so we assume they are unique.
-CREATE UNIQUE INDEX IF NOT EXISTS
+-- Look-up a commit by SHA; since there may be
+-- forks, there are probably duplicates.
+CREATE INDEX IF NOT EXISTS
 commit_sha ON commits_raw (sha);
 """
 
@@ -107,7 +103,7 @@ FILENAME = os.getenv('COMMIT_DATABASE',
 
 # Connect initially, and create the schema.
 conn = sqlite3.connect(FILENAME)
-conn.execute(SCHEMA)
+conn.executescript(SCHEMA)
 
 def insert_commit(repo, sha, time, message):
     """
@@ -123,7 +119,7 @@ def insert_commit(repo, sha, time, message):
             INSERT INTO commits_raw (
                 repo, sha, time, message
             ) VALUES (?, ?, ?, ?)
-        ''', repo, sha, time, message)
+        ''', (repo, sha, time, message))
 
 
 def fetch_commit(repo=None, sha=None):
@@ -169,7 +165,7 @@ def insert_status(repo, sha, status):
             INSERT INTO status_check (
                 repo, sha, time, status
             ) VALUES (?, ?, datetime('now'), ?)
-        ''', repo, sha, status)
+        ''', (repo, sha, status))
 
 
 def insert_perplexity(repo, sha, perplexity):
@@ -182,4 +178,55 @@ def insert_perplexity(repo, sha, perplexity):
             INSERT INTO status_check (
                 repo, sha, time, status
             ) VALUES (?, ?, datetime('now'), ?)
-        ''', repo, sha, status)
+        ''', (repo, sha, status))
+
+def unescape_message(text):
+    return text\
+        .replace('\\n', '\n')\
+        .replace('\\r', '\r')\
+        .replace('\\\\', '\\')
+
+
+def insert_commits_raw(repo, sha, time_str, message):
+    time = datetime.fromtimestamp(int(time_str) // 10**6)
+    return insert_commit(repo,
+                         sha,
+                         time,
+                         unescape_message(message))
+
+
+def do_insert_from_csv(insert, filename):
+    import csv
+    csv.field_size_limit(2**31)
+
+    with open(filename, 'r', encoding="UTF=8") as commits_file:
+        for row in tqdm(csv.reader(commits_file)):
+            insert(*row)
+
+
+if __name__ == '__main__':
+    import sys
+
+    _, mode, argument = sys.argv
+    insert = None
+    lookup = None
+
+    if mode == 'commit':
+        insert = insert_commits_raw
+    elif mode == 'status':
+        insert = insert_status
+    elif mode == 'perplexity':
+        insert = insert_perplexity
+    elif mode == 'lookup-sha':
+        lookup = 'sha'
+    else:
+        print('[mode] must be lookup-sha, commit, status, or perplexity',
+              file=sys.stderr)
+        sys.exit(-1)
+
+    if insert is not None:
+        do_insert_from_csv(insert, argument)
+    else:
+        commit = fetch_commit_by_sha(argument)
+        print(commit)
+        print(commit.tokens_as_string)

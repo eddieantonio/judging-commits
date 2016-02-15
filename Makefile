@@ -1,5 +1,8 @@
 BASE = .
 
+all:
+	@echo "Makefile disabled."
+
 commits.pickle: commits-combined.csv
 	$(BASE)/tokenize_and_pickle.py $<
 
