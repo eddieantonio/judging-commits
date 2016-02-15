@@ -19,6 +19,8 @@ from __future__ import division
 import regex
 from collections import namedtuple
 
+from tokenize_commit import tokenize
+
 
 class Commit(namedtuple(..., 'repo sha time message tokens status')):
     """
@@ -31,6 +33,13 @@ class Commit(namedtuple(..., 'repo sha time message tokens status')):
         return (self.message.startswith('Merge branch') or
                 self.message.startswith('Merge pull request') or
                 self.message.startswith('Merge remote-tracking'))
+
+    @property
+    def tokens(self):
+        """
+        Overrides stored results, instead freshly tokenizing the message!
+        """
+        return tokenize(self.message)
 
     @property
     def build_was_cancelled(self):
