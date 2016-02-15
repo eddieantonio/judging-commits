@@ -52,14 +52,16 @@ def main():
     repositories = load_commits_by_repo()
     repo_names = tuple(repositories.keys())
 
-    with open('errors.csv', 'w') as errors, open('perps.csv', 'w') as perps:
+    with open('errors.csv', 'w') as errors, open('perps-leave1.csv', 'w') as perps:
         for name in tqdm(repo_names):
             try:
                 lines = evaluate_repo(name, repositories)
                 for repo, sha, line in lines:
                     print(repo, sha, line, sep=',', file=perps)
+                perps.flush()
             except ModelError:
                 print(name, file=errors)
+                errors.flush()
 
 if __name__ == '__main__':
     main()

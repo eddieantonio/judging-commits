@@ -76,14 +76,16 @@ def main():
     repositories = load_commits_by_repo()
     folds = create_folds(repositories, k=10)
 
-    with open('errors.csv', 'w') as errors, open('perps.csv', 'w') as perps:
+    with open('errors.csv', 'w') as errors, open('perps-xfolds.csv', 'w') as perps:
         for i in trange(len(folds)):
             try:
                 lines = evaluate_fold(i, folds)
                 for repo, sha, line in lines:
                     print(repo, sha, line, sep=',', file=perps)
+                perps.flush()
             except ModelError:
                 print(name, file=errors)
+                errors.flush()
 
 
 if __name__ == '__main__':
