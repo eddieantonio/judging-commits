@@ -206,6 +206,27 @@ def is_build_version(text):
     ''', text, re.VERBOSE))
 
 
+def is_uuid(text):
+    """
+    >>> is_uuid('13f79535-47bb-0310-9956-ffa450edef68')
+    True
+    >>> is_uuid('d670460b4b4aece5915caf5c68d12f560a9fe3e4')
+    False
+    >>> is_uuid('13z79535-47bb-0310-9956-ffa450edef68')
+    False
+    """
+
+    return bool(re.match(r'''
+        # https://tools.ietf.org/html/rfc4122#section-3
+        [a-f0-9]{8}  -   # time-low
+        [a-f0-9]{4}  -   # time-mid
+        [a-f0-9]{4}  -   # time-high-and-version
+        [a-f0-9]{4}  -   # clock-seq-and-reserved clock-seq-low 
+        [a-f0-9]{12}     # node
+        $
+    ''', text, re.VERBOSE))
+
+
 
 def is_release_identifier(text):
     """
@@ -321,6 +342,8 @@ def replace_special_token(dirty_token):
     token = clean_token(dirty_token)
     if is_issue(token):
         return 'ISSUE-NUMBER'
+    elif is_uuid(token):
+        return 'UUID'
     elif is_build_version(token):
         return 'BUILD-VERSION'
     elif is_project_issue(token):
@@ -459,6 +482,10 @@ def tokenize(string):
     It understand numbers:
     >>> tokenize('GS-803 Build version advanced to 10491-7')
     ['PROJECT-ISSUE', 'build', 'version', 'advanced', 'to', 'BUILD-VERSION']
+
+    It understand UUIDs for some reason...:
+    >>> tokenize('git-svn-id: https://svn.apache.org 13f79535-47bb-0310-9956-ffa450edef68')
+    ['git-svn-id', 'URL', 'UUID']
     """
 
     # Step 1: Normalize into NFC
