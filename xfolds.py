@@ -67,9 +67,8 @@ def evaluate_fold(i, folds):
                      if j != i)
 
     with MITLanguageModel(other_commits) as model:
-        for commit in folds[i]:
-            perplexity = model.evaluate_perlexity(commit)
-            yield commit.repo, commit.sha, perplexity
+        perplexity = model.evaluate_perlexity(commit for commit in folds[i])
+        return perplexity
 
 
 def main():
@@ -79,9 +78,8 @@ def main():
     with open('errors.csv', 'w') as errors, open('perps-xfolds.csv', 'w') as perps:
         for i in trange(len(folds)):
             try:
-                lines = evaluate_fold(i, folds)
-                for repo, sha, line in lines:
-                    print(repo, sha, line, sep=',', file=perps)
+                perplexity = evaluate_fold(i, folds)
+                print(perplexity, sep=',', file=perps)
                 perps.flush()
             except ModelError:
                 print(name, file=errors)

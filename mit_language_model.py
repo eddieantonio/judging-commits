@@ -44,7 +44,7 @@ class MITLanguageModel(object):
 
         self.name = tempfile.mktemp()
         with tempfile.NamedTemporaryFile('wb') as text_file:
-            print_commits(commit, text_file)
+            print_commits(commits, text_file)
             try:
                 train_model(text_file.name, self.name,
                             order=self.order)
@@ -58,7 +58,7 @@ class MITLanguageModel(object):
             order = self.order
 
         with tempfile.NamedTemporaryFile('wb') as text_file:
-            print_commits(text_file)
+            print_commits(commits, text_file)
             try:
                 return evaluate_ngram(self.name, text_file.name, order=order)
             except subprocess.CalledProcessError:
@@ -77,10 +77,10 @@ def print_commits(maybe_commits, file_obj):
     try:
         tokens = maybe_commits.tokens_as_string
     except AttributeError:
-        for commit in commits:
-            tokens = maybe_commits.tokens_as_string
-            print_tokens(tokens, text_file, flush=False)
-        text_file.flush()
+        for commit in maybe_commits:
+            tokens = commit.tokens_as_string
+            print_tokens(tokens, file_obj, flush=False)
+        file_obj.flush()
     else:
         print_tokens(tokens, text_file)
 
