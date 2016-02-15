@@ -8,3 +8,5 @@ boa-job*-output.txt
 *.html
 *.sqlite
 *.sqlite-journal
+.Rhistory
+*.pdf

@@ -37,7 +37,8 @@ commits_raw (
     message TEXT NOT NULL,
 
     PRIMARY KEY (repo, sha)
-) WITHOUT ROWID;
+);
+
 
 -- Travis-CI
 CREATE TABLE IF NOT EXISTS
@@ -46,13 +47,15 @@ status_check (
     sha     TEXT NOT NULL,
 
     -- Insertion date.
-    time    DATE NOT NULL,
+    time    DATE NOT NULL
+            DEFAULT CURRENT_TIMESTAMP,
 
     -- The actual status!
     status  TEXT NOT NULL,
 
     PRIMARY KEY (repo, sha)
-) WITHOUT ROWID;
+);
+
 
 -- Leave-one-out perplexity
 CREATE TABLE IF NOT EXISTS
@@ -61,35 +64,38 @@ perplexity (
     sha     TEXT NOT NULL,
 
     -- Insertion date.
-    time    DATE NOT NULL,
+    time    DATE NOT NULL
+            DEFAULT CURRENT_TIMESTAMP,
 
     -- The actual perplexity!
     perplexity  REAL NOT NULL,
 
     PRIMARY KEY (repo, sha)
-) WITHOUT ROWID;
+);
 
-CREATE VIEW IF NOT EXISTS
-repositories (
-    name, commits
-)
-AS SELECT DISTINCT repo AS name, COUNT(sha) as commits
-FROM commits;
 
-CREATE VIEW IF NOT EXISTS
-commits (
-    repo, sha, time, message, status, perplexity
-)
+CREATE VIEW IF NOT EXISTS commits
 AS SELECT
-    c.repo AS repo, c.sha AS sha,
-    c.time AS time, c.message AS message,
-    status, perplexity
+    c.repo AS repo,
+    c.sha AS sha,
+    c.time AS time,
+    c.message AS message,
+    status,
+    perplexity
 FROM
     commits_raw AS c
     JOIN status_check   USING (repo, sha)
     JOIN perplexity     USING (repo, sha)
 WHERE
     status IS NOT 'cancelled';
+
+
+CREATE VIEW IF NOT EXISTS repositories
+AS SELECT DISTINCT
+    repo AS name,
+    COUNT(sha) as commits
+FROM commits;
+
 
 -- Look-up a commit by SHA; since there may be
 -- forks, there are probably duplicates.
@@ -104,6 +110,7 @@ FILENAME = os.getenv('COMMIT_DATABASE',
 # Connect initially, and create the schema.
 conn = sqlite3.connect(FILENAME)
 conn.executescript(SCHEMA)
+
 
 def insert_commit(repo, sha, time, message):
     """
@@ -163,22 +170,24 @@ def insert_status(repo, sha, status):
     with conn:
         conn.execute('''\
             INSERT INTO status_check (
-                repo, sha, time, status
-            ) VALUES (?, ?, datetime('now'), ?)
+                repo, sha, status
+            ) VALUES (?, ?, ?)
         ''', (repo, sha, status))
 
 
 def insert_perplexity(repo, sha, perplexity):
     """
-    Persist perplexity.
+    Persist perplexity.  You must manually calculate cross-entropy when
+    retrieving these values.
     """
 
     with conn:
         conn.execute('''\
-            INSERT INTO status_check (
-                repo, sha, time, status
-            ) VALUES (?, ?, datetime('now'), ?)
-        ''', (repo, sha, status))
+            INSERT INTO perplexity (
+                repo, sha, perplexity
+            ) VALUES (?, ?, ?)
+        ''', (repo, sha, perplexity))
+
 
 def unescape_message(text):
     return text\
