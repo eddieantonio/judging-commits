@@ -16,10 +16,16 @@
 
 from __future__ import division
 
-import regex
 from collections import namedtuple
 
+import regex
+
 from tokenize_commit import tokenize
+
+
+# Would use weakref but things get a bit weird...
+# Let's tear through our memory instead.
+_MESSAGE_CACHE = {}
 
 
 class Commit(namedtuple(..., 'repo sha time message tokens status')):
@@ -54,7 +60,12 @@ class Commit(namedtuple(..., 'repo sha time message tokens status')):
 
     @property
     def tokens_as_string(self):
-        return ' '.join(self.tokens)
+        try:
+            return _MESSAGE_CACHE[self.repo, self.sha]
+        except KeyError:
+            message = ' '.join(self.tokens)
+            _MESSAGE_CACHE[self.repo, self.sha] = message
+            return message
 
     @property
     def is_empty(self):
