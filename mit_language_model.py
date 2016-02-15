@@ -82,7 +82,7 @@ def print_commits(maybe_commits, file_obj):
             print_tokens(tokens, file_obj, flush=False)
         file_obj.flush()
     else:
-        print_tokens(tokens, text_file)
+        print_tokens(tokens, file_obj)
 
 
 def print_tokens(line, file_obj, flush=True):
@@ -104,11 +104,13 @@ def evaluate_ngram(model, test, order=3):
     return float(perp)
 
 
-def train_model(corpus, output_name, order=3):
+def train_model(corpus, output_name, order=3, write_binary=True):
     args = ['estimate-ngram',
             '-text', corpus,
             '-order', str(order),
+            '-write-binary', str(write_binary).lower(),
             '-write-lm', output_name]
+
     subprocess.check_call(args,
                           stdout=subprocess.DEVNULL,
                           stderr=subprocess.DEVNULL)

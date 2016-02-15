@@ -53,10 +53,10 @@ def main():
     repo_names = tuple(repositories.keys())
 
     with open('errors.csv', 'w') as errors, open('perps-leave1.csv', 'w') as perps:
-        for name in tqdm(repo_names):
+        for name in tqdm(repo_names, desc="Repositories"):
             try:
                 lines = evaluate_repo(name, repositories)
-                for repo, sha, line in lines:
+                for repo, sha, line in tqdm(lines, desc="Commits"):
                     print(repo, sha, line, sep=',', file=perps)
                 perps.flush()
             except ModelError:
