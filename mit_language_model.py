@@ -19,12 +19,14 @@ import os
 import subprocess
 import tempfile
 
+
 class ModelError(Exception):
     pass
 
 
 class ModelTrainingError(ModelError):
     pass
+
 
 class ModelEvaluationError(ModelError):
     pass
@@ -42,8 +44,7 @@ class MITLanguageModel(object):
 
         self.name = tempfile.mktemp()
         with tempfile.NamedTemporaryFile('wb') as text_file:
-            for commit in commits:
-                print_commit(commit, text_file)
+            print_commits(commit, text_file)
             try:
                 train_model(text_file.name, self.name,
                             order=self.order)
@@ -52,12 +53,12 @@ class MITLanguageModel(object):
 
         return self
 
-    def evaluate_perlexity(self, commit, order=None):
+    def evaluate_perlexity(self, commits, order=None):
         if order is None:
             order = self.order
 
         with tempfile.NamedTemporaryFile('wb') as text_file:
-            print_commit(commit, text_file)
+            print_commits(text_file)
             try:
                 return evaluate_ngram(self.name, text_file.name, order=order)
             except subprocess.CalledProcessError:
@@ -72,12 +73,24 @@ class MITLanguageModel(object):
             self.name = None
 
 
-def print_commit(commit, file_obj):
-    line = commit.message_as_ngrams
+def print_commits(maybe_commits, file_obj):
+    try:
+        tokens = maybe_commits.tokens_as_string
+    except AttributeError:
+        for commit in commits:
+            tokens = maybe_commits.tokens_as_string
+            print_tokens(tokens, text_file, flush=False)
+        text_file.flush()
+    else:
+        print_tokens(tokens, text_file)
+
+
+def print_tokens(line, file_obj, flush=True):
     assert '\n' not in line
     file_obj.write(line.encode('UTF-8'))
     file_obj.write('\n'.encode('UTF-8'))
-    file_obj.flush()
+    if flush:
+        file_obj.flush()
 
 
 def evaluate_ngram(model, test, order=3):

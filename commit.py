@@ -19,6 +19,7 @@ from __future__ import division
 import regex
 from collections import namedtuple
 
+
 class Commit(namedtuple(..., 'repo sha time message tokens status')):
     """
     All of the relevant state of a particular commit.
@@ -43,12 +44,12 @@ class Commit(namedtuple(..., 'repo sha time message tokens status')):
                 self.is_plausibly_english)
 
     @property
-    def message_as_ngrams(self):
+    def tokens_as_string(self):
         return ' '.join(self.tokens)
 
     @property
     def is_empty(self):
-        return len(self.message_as_ngrams.strip()) == 0
+        return len(self.tokens_as_string.strip()) == 0
 
     @property
     def is_plausibly_english(self):
