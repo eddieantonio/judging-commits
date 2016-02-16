@@ -15,9 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import namedtuple
+from __future__ import division
 
 import pickle
+from collections import namedtuple
 
 
 class Bin(namedtuple('Bin', 'range commits')):
@@ -26,9 +27,40 @@ class Bin(namedtuple('Bin', 'range commits')):
     def size(self):
         return len(self.commits)
 
+    @property
+    def proportion_failed(self):
+        failed = sum(1 for c in self.commits
+                     if c.status == 'failed')
+        return failed / self.size
+
+    @property
+    def midpoint(self):
+        lower, upper = self.range
+        return lower + (upper - lower) / 2
+
+    @property
+    def proportion_errored(self):
+        errored = sum(1 for c in self.commits
+                      if c.status == 'errored')
+        return errored / self.size
+
+    @property
+    def proportion_broken(self):
+        broken = sum(1 for c in self.commits
+                     if c.status in ('failed', 'errored'))
+        return broken / self.size
+
+    @property
+    def proportion_passed(self):
+        passed = sum(1 for c in self.commits
+                     if c.status == 'passed')
+        return passed / self.size
+
     # TODO: Failure rate
     # TODO: Fail'd rate
     # TODO: Error'd rate
+
+    # https://docs.travis-ci.com/user/customizing-the-build#Breaking-the-Build
 
     def append(self, commit):
         lower, upper = self.range
@@ -92,14 +124,30 @@ def create_bins():
 
     return bins
 
-if __name__ == '__main__':
+def export_csv(filename, values):
+    import csv
+    with open(filename, 'w', encoding='UTF-8') as f:
+        writer = csv.writer(f)
+        writer.writerow(('est.xentropy', 'proportion'))
+        for row in values:
+            writer.writerow(row)
+
+if __name__ in ('__main__', '__console__'):
     bins = load_bins()
     from collections import Counter
 
     # Sort commits by size.
-    by_size = sorted(bins, key=lambda b: b.size, reverse=True)
-    counts = [Counter(c.tokens_as_string for c in bin.commits)
-              for bin in by_size]
+    #by_size = sorted(bins, key=lambda b: b.size, reverse=True)
+    #counts = [Counter(c.tokens_as_string for c in bin.commits)
+              #for bin in by_size]
 
     # Figure out the most common commits.
-    commit_counter = Counter(c.tokens_as_string for c in persist.fetch_commits())
+    #commit_counter = Counter(c.tokens_as_string for c in persist.fetch_commits())
+
+    #passed = [(b.midpoint, b.proportion_passed) for b in bins]
+    #failed = [(b.midpoint, b.proportion_failed) for b in bins]
+    #errored = [(b.midpoint, b.proportion_errored) for b in bins]
+    #broken = [(b.midpoint, b.proportion_broken) for b in bins]
+    #export_csv('passed.csv', passed)
+    #export_csv('failed.csv', failed)
+    #export_csv('errored.csv', errored)
