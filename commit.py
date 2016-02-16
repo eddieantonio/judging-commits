@@ -16,8 +16,6 @@
 
 from __future__ import division
 
-import weakref
-
 from collections import namedtuple
 from math import log
 
@@ -26,9 +24,10 @@ import regex
 from tokenize_commit import tokenize
 
 
-# Would use weakref but things get a bit weird...
+# Would use weakref but we can't hold a reference to a string, or a tuple, or
+# anything useful.
 # Let's tear through our memory instead.
-_MESSAGE_CACHE = weakref.WeakKeyDictionary()
+_MESSAGE_CACHE = {}
 
 
 class Commit(namedtuple(..., 'repo sha time message status perplexity')):

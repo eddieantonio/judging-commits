@@ -15,10 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import itertools
 import os
 import re
 import sqlite3
 from datetime import datetime
+from itertools import repeat
 
 from tqdm import tqdm
 
@@ -147,7 +149,10 @@ def fetch_commit(repo=None, sha=None):
             sha = ?
     ''', (repo, sha))
 
-    return Commit(*cursor.fetchone())
+    try:
+        return Commit(*cursor.fetchone())
+    except TypeError:
+        raise KeyError(sha)
 
 
 def fetch_commit_by_sha(sha):
@@ -159,7 +164,10 @@ def fetch_commit_by_sha(sha):
             sha = ?
     ''', (sha,))
 
-    return Commit(*cursor.fetchone())
+    try:
+        return Commit(*cursor.fetchone())
+    except TypeError:
+        raise KeyError(sha)
 
 
 def insert_status(repo, sha, status):
@@ -202,6 +210,46 @@ def insert_commits_raw(repo, sha, time_str, message):
                          sha,
                          time,
                          unescape_message(message))
+
+
+def fetch_raw_commits(exclude_repositories=()):
+    """
+    Yields all commits, with status and perplexity set to null.
+    """
+
+    query = r'''
+        SELECT repo, sha, time, message
+        FROM commits_raw
+    '''
+
+    if exclude_repositories:
+        # Convert string to single value tuple.
+        if isinstance(exclude_repositories, str):
+            exclude_repositories = (exclude_repositories,)
+        placeholders = ', '.join(repeat('?', len(exclude_repositories)))
+        query = '''
+            {query}
+            WHERE repo NOT IN ({placeholders})
+        '''.format(query=query,
+                   placeholders=placeholders)
+
+    for row in conn.execute(query, exclude_repositories):
+        yield Commit(repo=row[0], sha=row[1], time=row[2], message=row[3],
+                     status=None, perplexity=None)
+
+
+def fetch_commits():
+    """
+    Yields all fully-processed commits.
+    """
+
+    cursor = conn.execute(r'''
+        SELECT repo, sha, time, message
+        FROM commits_raw
+    ''')
+
+    for row in cursor:
+        yield Commit(*row)
 
 
 def do_insert_from_csv(insert, filename):
