@@ -55,7 +55,7 @@ class Commit(namedtuple(..., 'repo sha time message status perplexity')):
 
     @property
     def cross_entropy(self):
-        return log(self.perplexity, base=2)
+        return log(self.perplexity, 2)
 
     @property
     def is_valid(self):

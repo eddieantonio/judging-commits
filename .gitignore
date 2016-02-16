@@ -10,3 +10,4 @@ boa-job*-output.txt
 *.sqlite-journal
 .Rhistory
 *.pdf
+bins.pickle

@@ -244,8 +244,9 @@ def fetch_commits():
     """
 
     cursor = conn.execute(r'''
-        SELECT repo, sha, time, message
-        FROM commits_raw
+        SELECT
+            repo, sha, time, message, status, perplexity
+        FROM commits
     ''')
 
     for row in cursor:
