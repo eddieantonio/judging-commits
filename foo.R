@@ -251,3 +251,24 @@ good(1.28) == TRUE
 #P value adjustment method: holm 
 #> ggplot(scommits, aes(xentropy, colour = scommits$broken)) + stat_ecdf(geom = "step")
 #> scommits$broken2 <- ifelse(scommits$status == 'passed', 'Passed', 'Broken')
+
+
+
+commits$broken <- ifelse(scommits$status == 'passed', 'Passed', 'Broken')
+commits$xentropy <- sapply(commits$perplexity, log2)
+with(commmits, {
+    bin.width <- 2 * IRQ(xentropy) * length(xentropy) ^ (-1/3)
+
+    ggplot(commits, aes(xentropy, fill=status)) +
+        geom_histogram(binwidth = bin.width) +
+        xlab("Cross-Entropy (bits)") +
+        ylab("Number of commit messages") + 
+        labs(fill = "Build Status") +
+        # Color scheme:
+        # http://paletton.com/#uid=62l150kwi++bu++hX++++rd++kX
+        # http://colorbrewer2.org/
+        scale_fill_manual(values = c("#0ABBFF", "#FF0095", "#ADFF00")) +
+
+    ggsave(filename = "first-histogram.pdf",
+           width = 6, height = 4.3, unit = "in")
+})

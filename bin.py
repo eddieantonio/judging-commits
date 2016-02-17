@@ -137,9 +137,10 @@ if __name__ in ('__main__', '__console__'):
     from collections import Counter
 
     # Sort commits by size.
-    #by_size = sorted(bins, key=lambda b: b.size, reverse=True)
-    #counts = [Counter(c.tokens_as_string for c in bin.commits)
-              #for bin in by_size]
+    suitable_bins = (b for b in bins if b.range[0] < 5.5)
+    by_size = sorted(suitable_bins, key=lambda b: b.size, reverse=True)
+    counts = [Counter(c.tokens_as_string for c in bin.commits)
+              for bin in by_size]
 
     # Figure out the most common commits.
     #commit_counter = Counter(c.tokens_as_string for c in persist.fetch_commits())
