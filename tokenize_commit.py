@@ -31,17 +31,29 @@ except ImportError:
 
 def is_sha(text):
     """
-    >>> is_sha('afa67f75a65f6a7f87af54a0')
+    To be considered a SHA, it must have at least one digit.
+
+    >>> is_sha('f75a283')
+    True
+    >>> is_sha('decade')
+    False
+    >>> is_sha('facade')
+    False
+    >>> is_sha('deedeed')
     False
     >>> is_sha('d670460b4b4aece5915caf5c68d12f560a9fe3e4')
     True
     >>> is_sha('ad670460b4b4aece5915caf5c68d12f560a9fe3e4')
     False
     >>> is_sha('670460b4b4aece5915caf5c68d12f560a9fe3e4')
+    True
+    >>> is_sha('670460b4b4aece5915caf5c68d12f560a9fe3g4')
     False
     """
 
-    return bool(re.match(r'''^[a-f0-9]{40}$''', text))
+    valid_sha = bool(re.match(r'''^[a-f0-9]{5,40}$''', text))
+    has_digit = bool(re.search(r'\d', text))
+    return valid_sha and has_digit
 
 
 def is_bracketed_email(text):
