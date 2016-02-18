@@ -16,8 +16,6 @@ commits <- dbGetQuery(con, "SELECT repo, sha, message, perplexity,
 commits$xentropy <- sapply(commits$perplexity, log2)
 commits$build <- ifelse(commits$status == 'Passed', 'Passed', 'Broken')
 
-#bin.width <- 2 * IQR(xentropy) * length(xentropy) ^ (-1/3)
-
 with(commits, {
     bin.width <- 2 * IQR(xentropy) * length(xentropy) ^ (-1/3)
 
