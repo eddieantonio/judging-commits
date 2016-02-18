@@ -46,7 +46,7 @@ commits_raw (
 CREATE TABLE IF NOT EXISTS
 project_lang (
     repo TEXT PRIMARY KEY,
-    lang TEXT
+    lang TEXT NOT NULL
 ) WITHOUT ROWID;
 
 
@@ -139,6 +139,14 @@ AS SELECT DISTINCT
     repo AS name,
     COUNT(sha) as commits
 FROM commits;
+
+CREATE VIEW IF NOT EXISTS repositories_with_statuses
+AS SELECT DISTINCT
+    c.repo AS name
+FROM
+    commits_raw AS c
+    JOIN status_check USING (repo, sha)
+;
 
 
 -- Look-up a commit by SHA; since there may be
@@ -293,6 +301,42 @@ def fetch_commits(autogen=False):
 
     for row in cursor:
         yield Commit(*row)
+
+
+def fetch_elligible_repositories():
+    """
+    Returns all elligble repositories.
+    """
+
+    cursor = conn.execute(r'''
+        SELECT name FROM repositories_with_statuses
+    ''')
+
+    for row in cursor:
+        assert '/' in row[0]
+        yield row[0]
+
+
+def fetch_commits_by_repo(repo_name):
+    cursor = conn.execute(r'''
+        SELECT
+            repo, sha, time, message
+        FROM commits_raw
+        WHERE repo = :repo
+      ''', {'repo': repo_name})
+
+    for row in cursor:
+        yield Commit(repo=row[0], sha=row[1], time=row[2], message=row[3],
+                     status=None, perplexity=None)
+
+
+def set_project_langauge(repo, language):
+    with conn:
+        conn.execute('''\
+            INSERT INTO  (
+                repo, lang
+            ) VALUES (:name, :iso)
+         ''', {'name': repo, 'iso': language})
 
 
 def do_insert_from_csv(insert, filename):
