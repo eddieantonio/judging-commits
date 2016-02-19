@@ -1,14 +1,18 @@
+# Various caches
 .cache/
 __pycache__
+
+# Access tokens
 gh-access-token
-*.csv
 travis-token
-commits.pickle
+
+# Generated data files
+*.csv
+*.pickle
 boa-job*-output.txt
+
 *.html
 *.sqlite
 *.sqlite-journal
 .Rhistory
 *.pdf
-bins.pickle
-langs.pickle
