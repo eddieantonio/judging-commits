@@ -333,9 +333,8 @@ def fetch_commits_by_repo(repo_name):
 def set_project_langauge(repo, language):
     with conn:
         conn.execute('''\
-            INSERT INTO  (
-                repo, lang
-            ) VALUES (:name, :iso)
+            INSERT INTO project_lang (repo, lang)
+            VALUES (:name, :iso)
          ''', {'name': repo, 'iso': language})
 
 

@@ -76,7 +76,7 @@ class Prompt(object):
         sys.stdout.flush()
 
     def ask_about(self, title, commits):
-        print("{t.bold}{title}{t.normal".format(title=title,
+        print("{t.bold}{title}{t.normal}".format(title=title,
                                                 t=self.term))
         for commit in commits:
             self.print_message(commit)
@@ -93,7 +93,7 @@ def english_score_average(repository):
 
     valid_commits = [commit for commit in commits if commit.is_valid]
     if not valid_commits:
-        return None
+        return None, None, None
 
     n = 0
     score = 0.0
@@ -106,22 +106,37 @@ def english_score_average(repository):
     return repository, valid_commits, score / n
 
 
-if __name__ == '__main__':
-    # Get all elligible repos
-    repos = list(persist.fetch_elligible_repositories())
+def repo_commits_with_rank():
+    filename = 'langs.pickle'
 
-    # Fetch all of the commits.
-    with_averages = (english_score_average(r) for r in repos)
-    # For each repo, calculate its language score average
-    repo_commits = list(tqdm((repo, commits) for repo, commits, _ in
-                             with_averages if repo is not None))
+    try:
+        with open(filename, 'rb') as lang_file:
+            return pickle.load(lang_file)
+    except IOError:
+        # Get all elligible repos
+        repos = list(persist.fetch_elligible_repositories())
+
+        # Fetch all of the commits.
+        with_averages = (english_score_average(r) for r in repos)
+        # For each repo, calculate its language score average
+        repo_commits = [(repo, commits, avg_score) for repo, commits, avg_score in
+                        tqdm(with_averages) if repo is not None]
+
+        with open(filename, 'wb') as lang_file:
+            pickle.dump(repo_commits, lang_file)
+
+        return repo_commits
+
+
+if __name__ == '__main__':
+    repo_commits = repo_commits_with_rank()
     repo_commits.sort(key=lambda t: t[2])
 
     print("Found", len(repo_commits), "elligible repositories")
 
     prompt = Prompt()
     all_rest_english = False
-    for repo, commits in repo_commits:
+    for repo, commits, _ in repo_commits:
         if all_rest_english:
             persist.set_project_langauge(repo, 'en')
         else:

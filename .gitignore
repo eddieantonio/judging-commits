@@ -11,3 +11,4 @@ boa-job*-output.txt
 .Rhistory
 *.pdf
 bins.pickle
+langs.pickle

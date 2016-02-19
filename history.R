@@ -22,9 +22,6 @@ with(commits, {
     # Compare builds that have passed against builds that are broken.
     print(ks.test(xentropy[build == 'Passed'], xentropy[build == 'Broken']))
 
-    # Do finer comparisons.
-    print(ks.test(xentropy[status == 'Passed'], xentropy[status != 'Passed']))
-
     # Do a pairwise Wilcox test.
     print(pairwise.wilcox.test(xentropy, status))
 
@@ -50,6 +47,9 @@ good <- function(x) {
     }
     return(TRUE)
 }
+
+print("With bins removed.")
+
 scommits <- commits[sapply(commits$xentropy, good),]
 
 with(scommits, {
@@ -57,9 +57,6 @@ with(scommits, {
 
     # Compare builds that have passed against builds that are broken.
     print(ks.test(xentropy[build == 'Passed'], xentropy[build == 'Broken']))
-
-    # Do finer comparisons.
-    print(ks.test(xentropy[status == 'Passed'], xentropy[status != 'Passed']))
 
     # Do a pairwise Wilcoxon Rank-Sum test.
     print(pairwise.wilcox.test(xentropy, status))
