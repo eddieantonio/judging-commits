@@ -10,7 +10,7 @@ commits <- dbGetQuery(con, "SELECT repo, sha, message, perplexity,
                                 WHEN 'failed' THEN 'Failed'
                                 ELSE NULL
                                 END as status
-                      FROM commits_autogen")
+                      FROM commits")
 
 # Pre-calculate cross-entropy.
 commits$xentropy <- sapply(commits$perplexity, log2)
@@ -19,58 +19,24 @@ commits$build <- ifelse(commits$status == 'Passed', 'Passed', 'Broken')
 with(commits, {
     bin.width <- 2 * IQR(xentropy) * length(xentropy) ^ (-1/3)
 
-    # Compare builds that have passed against builds that are broken.
-    print(ks.test(xentropy[build == 'Passed'], xentropy[build == 'Broken']))
-
     # Do a pairwise Wilcox test.
     print(pairwise.wilcox.test(xentropy, status))
+
+    # Compare builds that have passed against builds that are broken.
+    print(ks.test(xentropy[build == 'Passed'], xentropy[build == 'Broken']))
 
     ggplot(commits, aes(xentropy, fill=status)) +
         geom_histogram(binwidth = bin.width) +
         xlab("Cross-Entropy (bits)") +
         ylab("Number of commit messages") +
+        ylim(0, 4500) +
         scale_fill_manual(values = c("#0ABBFF", "#FF0095", "#ADFF00")) +
         labs(fill = "Build Status")
 
-    ggsave("histo.pdf",
+    ggsave("histo-removed.pdf",
            width=6.7, height=4)
 })
 
-
-lower <- c(5.36627217556062, 1.563910848555837, 0.8326875164395318, 1.1251768492860539, 4.488804177021055)
-upper <- c(5.512516841983881, 1.7101555149790981, 0.9789321828627928, 1.271421515709315, 4.635048843444316)
-good <- function(x) {
-    for (i in 1:length(lower)) {
-        if (x >= lower[i] && x < upper[i]) {
-            return(FALSE)
-        }
-    }
-    return(TRUE)
-}
-
-print("With bins removed.")
-
-scommits <- commits[sapply(commits$xentropy, good),]
-
-with(scommits, {
-    bin.width <- 2 * IQR(xentropy) * length(xentropy) ^ (-1/3)
-
-    # Compare builds that have passed against builds that are broken.
-    print(ks.test(xentropy[build == 'Passed'], xentropy[build == 'Broken']))
-
-    # Do a pairwise Wilcoxon Rank-Sum test.
-    print(pairwise.wilcox.test(xentropy, status))
-
-    ggplot(scommits, aes(xentropy, fill=status)) +
-        geom_histogram(binwidth = bin.width) +
-        xlab("Cross-Entropy (bits)") +
-        ylab("Number of commit messages") +
-        scale_fill_manual(values = c("#0ABBFF", "#FF0095", "#ADFF00")) +
-        labs(fill = "Build Status")
-
-    ggsave("histo-wo-outliers.pdf",
-           width=6.7, height=4)
-})
 
 #pairwise.wilcox.test(scommits$xentropy, scommits$broken)
 #ggplot(scommits, aes(xentropy, colour = scommits$broken)) + stat_ecdf(geom = "step")
@@ -93,16 +59,6 @@ with(scommits, {
 #shapiro.test(xentropy)
 #shapiro.test(sample(xentropy, 5000))
 #shapiro.test(rnorm(5000))
-#lower <- c(5.36627217556062, 1.563910848555837, 0.8326875164395318, 1.1251768492860539, 4.488804177021055)
-#upper <- c(5.512516841983881, 1.7101555149790981, 0.9789321828627928, 1.271421515709315, 4.635048843444316)
-#good <- function(x) {
-#    for (i in 1:length(lower)) {
-#        if (x >= lower[i] && x < upper[i]) {
-#            return(FALSE)
-#        }
-#    }
-#    return(TRUE)
-#}
 
 # Some good tests!
 #print(good(5.37) == FALSE)
