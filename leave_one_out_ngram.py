@@ -22,13 +22,32 @@ import pickle
 
 from tqdm import tqdm
 
+import persist
 from commit import Commit
 from mit_language_model import MITLanguageModel, ModelError
 
 
 def load_commits_by_repo():
-    with open('./commits.pickle', 'rb') as fp:
-        return pickle.load(fp)
+    # SDafdjksanfdskanfjdskanf
+    repos = {}
+    cursor = persist.conn.execute(r'''
+        SELECT
+            c.repo, c.sha, c.time, c.message, NULL as status, NULL as perplexity
+        FROM
+            commits_raw as c
+            JOIN status_check USING (repo, sha)
+            JOIN project_lang USING (repo)
+        WHERE
+            lang = 'en'
+    ''')
+
+    for row in tqdm(cursor, desc="Loading commits"):
+        commit = Commit(repo=row[0], sha=row[1], time=row[2], message=row[3],
+                        status=None, perplexity=None)
+        if commit.is_valid:
+            repos.setdefault(commit.repo, []).append(commit)
+
+    return repos
 
 
 def evaluate_repo(name, repositories):
@@ -52,13 +71,12 @@ def main():
     repositories = load_commits_by_repo()
     repo_names = tuple(repositories.keys())
 
-    with open('errors.csv', 'w') as errors, open('perps-leave1.csv', 'w') as perps:
+    with open('errors.csv', 'w') as errors:
         for name in tqdm(repo_names, desc="Repositories"):
             try:
                 lines = evaluate_repo(name, repositories)
-                for repo, sha, line in tqdm(lines, desc="Commits"):
-                    print(repo, sha, line, sep=',', file=perps)
-                perps.flush()
+                for repo, sha, perp in tqdm(lines, desc="Commits"):
+                    persist.insert_perplexity(repo, sha, perp)
             except ModelError:
                 print(name, file=errors)
                 errors.flush()

@@ -111,8 +111,8 @@ AS SELECT
     perplexity
 FROM
     commits_raw AS c
-    JOIN status_check   USING (repo, sha)
-    JOIN perplexity     USING (repo, sha)
+    JOIN status_check USING (repo, sha)
+    JOIN perplexity   USING (repo, sha)
 WHERE
     status IS NOT 'cancelled';
 
