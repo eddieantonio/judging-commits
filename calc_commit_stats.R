@@ -18,6 +18,8 @@ commits$build <- ifelse(commits$status == 'Passed', 'Passed', 'Broken')
 
 with(commits, {
     bin.width <- 2 * IQR(xentropy) * length(xentropy) ^ (-1/3)
+    print(length(xentropy))
+    print(bin.width)
 
     # Do a pairwise Wilcox test.
     print(pairwise.wilcox.test(xentropy, status))

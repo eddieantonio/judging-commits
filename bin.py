@@ -21,15 +21,38 @@ import pickle
 from collections import namedtuple
 
 
-class Bin(namedtuple('Bin', 'range commits')):
-    __slots__ = ()
+class Bin(object):
+    __slots__ = ('_lower', '_upper', '_commits')
+
+    def __init__(self, lower, upper):
+        assert lower < upper
+        self._lower = lower
+        self._upper = upper
+        self._commits = []
+
+    @property
+    def range(self):
+        return (self.lower, self.upper)
+
+    @property
+    def lower(self):
+        return self._lower
+
+    @property
+    def upper(self):
+        return self._upper
+
+    @property
+    def commits(self):
+        return list(self._commits)
+
     @property
     def size(self):
-        return len(self.commits)
+        return len(self._commits)
 
     @property
     def proportion_failed(self):
-        failed = sum(1 for c in self.commits
+        failed = sum(1 for c in self
                      if c.status == 'failed')
         return failed / self.size
 
@@ -40,40 +63,43 @@ class Bin(namedtuple('Bin', 'range commits')):
 
     @property
     def proportion_errored(self):
-        errored = sum(1 for c in self.commits
+        errored = sum(1 for c in self
                       if c.status == 'errored')
         return errored / self.size
 
     @property
     def proportion_broken(self):
-        broken = sum(1 for c in self.commits
+        broken = sum(1 for c in self
                      if c.status in ('failed', 'errored'))
         return broken / self.size
 
     @property
     def proportion_passed(self):
-        passed = sum(1 for c in self.commits
+        passed = sum(1 for c in self
                      if c.status == 'passed')
         return passed / self.size
-
-    # TODO: Failure rate
-    # TODO: Fail'd rate
-    # TODO: Error'd rate
-
-    # https://docs.travis-ci.com/user/customizing-the-build#Breaking-the-Build
 
     def append(self, commit):
         lower, upper = self.range
         assert lower <= commit.cross_entropy < upper,\
             "{} not in [{}, {})".format(commit.cross_entropy, lower, upper)
 
-        self.commits.append(commit)
+        self._commits.append(commit)
+
+    def count_commits(self):
+        return Counter(c.tokens_as_string for c in self)
+
+    def __getitem__(self, index):
+        return self._commits[index]
+
+    def __iter__(self):
+        return iter(self._commits)
 
     @classmethod
     def create(cls, start, width):
         assert start > 0
         assert width > 0
-        return cls((start, start + width), [])
+        return cls(start, start + width)
 
 
 def load_bins():
@@ -87,6 +113,7 @@ def load_bins():
             pickle.dump(bins, bin_file)
         return bins
 
+
 def next_smallest_bounds(starting, width, to_fit):
     assert width > 0
     assert to_fit >= starting
@@ -98,14 +125,18 @@ def next_smallest_bounds(starting, width, to_fit):
 
     return lower, upper
 
-def create_bins():
+def create_bins(autogen=False):
     import persist
-    commits = list(persist.fetch_commits())
+    commits = list(persist.fetch_commits(autogen))
     commits.sort(key=lambda commit: commit.cross_entropy)
 
     # Calculated in R:
     # 2 * IQR(cross_entropy) * len(commits) ** (-1.0/3.0)
-    bin_width = 0.146244666423261
+
+    if autogen:
+        bin_width = 0.146244666423261
+    else:
+        bin_width = 0.1327429
 
     assert len(commits) >= 2
     min_value = commits[0].cross_entropy
@@ -124,6 +155,7 @@ def create_bins():
 
     return bins
 
+
 def export_csv(filename, values):
     import csv
     with open(filename, 'w', encoding='UTF-8') as f:
@@ -132,10 +164,13 @@ def export_csv(filename, values):
         for row in values:
             writer.writerow(row)
 
+
+
 if __name__ in ('__main__', '__console__'):
     bins = load_bins()
     from collections import Counter
     by_size = sorted(bins, key=lambda b: b.size, reverse=True)
+    outliers = [bin for bin in by_size if bin.midpoint < 2]
 
     # Sort commits by size.
     #suitable_bins = (b for b in bins if b.range[0] < 5.5)
