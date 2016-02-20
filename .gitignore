@@ -16,3 +16,4 @@ boa-job*-output.txt
 *.sqlite-journal
 .Rhistory
 *.pdf
+.RData
