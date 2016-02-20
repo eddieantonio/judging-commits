@@ -48,11 +48,13 @@ with(commits, {
         #scale_fill_manual(values = c("#0ABBFF", "#FF0095", "#ADFF00")) +
         scale_colour_brewer(type = "qual", palette = 1, direction = -1) +
         xlab("Cross-Entropy (bits)") +
-        ylab("Number of commit messages (commulative)") +
-        labs(fill = "Build Status")
+        ylab("Number of commits (cumulative)") +
+        labs(fill = "Build Status") +
+        # Remove the legend...
+        guide(colour = "none")
 
     ggsave("ecdf.pdf",
-           width=6.7, height=4)
+           width=3.33, height=3.33)
 
     # ggsave("histo-combined.pdf", arrangeGrob(cauto, cfilt, ncol = 2, widths
     # = c(3.68, 4.02)), width=6.7, height = 2.76)
