@@ -30,7 +30,8 @@ with(commits, {
         xlab("Cross-Entropy (bits)") +
         ylab("Number of commit messages") +
         ylim(0, 4500) +
-        scale_fill_manual(values = c("#0ABBFF", "#FF0095", "#ADFF00")) +
+        # Just the right scale!
+        scale_fill_brewer(type = "qual", palette = 1, direction = -1)
         labs(fill = "Build Status")
 
     ggsave("histo.pdf",
