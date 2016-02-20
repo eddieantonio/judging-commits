@@ -136,7 +136,7 @@ def create_bins(autogen=False):
     if autogen:
         bin_width = 0.146244666423261
     else:
-        bin_width = 0.1327429
+        bin_width = 0.1282537
 
     assert len(commits) >= 2
     min_value = commits[0].cross_entropy
