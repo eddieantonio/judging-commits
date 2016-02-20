@@ -27,15 +27,29 @@ with(commits, {
     # Compare builds that have passed against builds that are broken.
     print(ks.test(xentropy[build == 'Passed'], xentropy[build == 'Broken']))
 
-    ggplot(commits, aes(xentropy, fill=status)) +
-        geom_histogram(binwidth = bin.width) +
+
+    #ggplot(commits, aes(xentropy, fill=status)) +
+    #    geom_histogram(binwidth = bin.width) +
+    #    xlab("Cross-Entropy (bits)") +
+    #    ylab("Number of commit messages") +
+    #    ylim(0, 4500) +
+    #    scale_fill_manual(values = c("#0ABBFF", "#FF0095", "#ADFF00")) +
+    #    labs(fill = "Build Status")
+
+    #ggsave("histo-removed.pdf",
+    #       width=6.7, height=4)
+
+
+    #ggplot(commits[status != 'errored',], aes(x=xentropy, colour = status)) +
+    ggplot(commits, aes(x=xentropy, colour = status)) +
+        stat_ecdf() +
+        #scale_fill_manual(values = c("#0ABBFF", "#FF0095", "#ADFF00")) +
+        scale_colour_brewer(type = "qual", palette = 1) +
         xlab("Cross-Entropy (bits)") +
-        ylab("Number of commit messages") +
-        ylim(0, 4500) +
-        scale_fill_manual(values = c("#0ABBFF", "#FF0095", "#ADFF00")) +
+        ylab("Number of commit messages (commulative)") +
         labs(fill = "Build Status")
 
-    ggsave("histo-removed.pdf",
+    ggsave("ecdf.pdf",
            width=6.7, height=4)
 })
 
