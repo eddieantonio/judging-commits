@@ -17,8 +17,11 @@
 
 from __future__ import division
 
+import csv
 import pickle
-from collections import namedtuple
+from collections import namedtuple, Counter
+
+import persist
 
 
 class Bin(object):
@@ -90,10 +93,18 @@ class Bin(object):
         return Counter(c.tokens_as_string for c in self)
 
     def __getitem__(self, index):
+        '''
+        Use a bin like a list of commits.
+        '''
         return self._commits[index]
 
     def __iter__(self):
         return iter(self._commits)
+
+    def __repr__(self):
+        return '''
+            <{clsname!s} range={self.range!r}, size={self.size!r}>
+        '''.format(self=self, clsname=self.__class__.__name__).strip()
 
     @classmethod
     def create(cls, start, width):
@@ -125,20 +136,42 @@ def next_smallest_bounds(starting, width, to_fit):
 
     return lower, upper
 
+
+def identity(x):
+    return x
+
+
+def iqr(seq, key=identity):
+    n = len(seq)
+
+    lower = seq[n // 4]
+    upper = seq[3 * n // 4]
+
+    lower_val = key(lower)
+    upper_val = key(upper)
+
+    if not (lower_val <= upper_val):
+        raise ValueError('Must be sorted range')
+
+    return upper_val - lower_val
+
+
+def freedman_diaconis_rule(seq, key=identity):
+    return 2 * iqr(seq, key=key) * len(seq) ** (-1.0 / 3.0)
+
+
 def create_bins(autogen=False):
-    import persist
+
     commits = list(persist.fetch_commits(autogen))
-    commits.sort(key=lambda commit: commit.cross_entropy)
-
-    # Calculated in R:
-    # 2 * IQR(cross_entropy) * len(commits) ** (-1.0/3.0)
-
-    if autogen:
-        bin_width = 0.146244666423261
-    else:
-        bin_width = 0.1282537
-
     assert len(commits) >= 2
+
+    def by_xentropy(commit):
+        return commit.cross_entropy
+
+    commits.sort(key=by_xentropy)
+
+    bin_width = freedman_diaconis_rule(commits, key=by_xentropy)
+    assert bin_width > 0.0
     min_value = commits[0].cross_entropy
 
     bins = []
@@ -157,34 +190,20 @@ def create_bins(autogen=False):
 
 
 def export_csv(filename, values):
-    import csv
     with open(filename, 'w', encoding='UTF-8') as f:
         writer = csv.writer(f)
-        writer.writerow(('est.xentropy', 'proportion'))
+        writer.writerow(('mid.xentropy', 'proportion'))
         for row in values:
             writer.writerow(row)
 
 
-
 if __name__ in ('__main__', '__console__'):
     bins = load_bins()
-    from collections import Counter
+
+    # Sort bins by size.
     by_size = sorted(bins, key=lambda b: b.size, reverse=True)
-    #outliers = [bin for bin in by_size if bin.midpoint < 2]
+    # Get the obvious outlier bins
+    outliers = [bin for bin in by_size if bin.midpoint < 2]
 
-    # Sort commits by size.
-    #suitable_bins = (b for b in bins if b.range[0] < 5.5)
-    #by_size = sorted(suitable_bins, key=lambda b: b.size, reverse=True)
-    #counts = [Counter(c.tokens_as_string for c in bin.commits)
-              #for bin in by_size]
-
-    # Figure out the most common commits.
-    #commit_counter = Counter(c.tokens_as_string for c in persist.fetch_commits())
-
-    #passed = [(b.midpoint, b.proportion_passed) for b in bins]
-    #failed = [(b.midpoint, b.proportion_failed) for b in bins]
-    #errored = [(b.midpoint, b.proportion_errored) for b in bins]
-    #broken = [(b.midpoint, b.proportion_broken) for b in bins]
-    #export_csv('passed.csv', passed)
-    #export_csv('failed.csv', failed)
-    #export_csv('errored.csv', errored)
+    failed = ((b.midpoint, b.proportion_failed) for b in bins)
+    export_csv('failed.csv', failed)
