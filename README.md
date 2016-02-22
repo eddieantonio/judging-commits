@@ -4,7 +4,7 @@ Challenge Paper Utilities
 The utilities used to gather and analyze data for
 
     @article{santos2016,
-        title = {Juding a commit by its cover: Correlating commit message entropy with build status on Travis-CI},
+        title = {Juding a Commit by Its Cover or Can a Commit Message Predict Build Failure},
         shorttitle = {Juding a commit by its cover},
         author = {Santos, Eddie Antonio and Hindle, Abram},
         year = {2016}
@@ -65,16 +65,15 @@ Install on Ubuntu
     $ sudo make install
 
 
-Old TODO list:
---------------
+R Packages
+----------
 
- - [x] Tokenize every commit message, by project. Pickle.
- - [x] Download data from Travis-CI, ~~GHTorrent~~.
- - [x] For each project: train model on all projects other than
-        current.
- - [x] Do cross-folds validation.
- - [x] ~~Validate the model against each project -- one-way ANOVA should
-       say it's not different.~~
- - [ ] ~~If everything checks out -- assumption is that no one project's
-       model is sufficiently different, then we're in business!~~
- - [x] Manually classify a random sample of commits.
+ - ggplot2
+ - RSQLite
+
+License
+-------
+
+Unless otherwise noted, assume all Python, Ruby, and R sources in this
+repository is © 2016 Eddie Antonio Santos, licensed under the Apache 2.0
+license.
